@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-fork-ts-checker",
-  "version": "0.1.0",
+  "version": "0.0.1-alpha.1",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -33,6 +33,13 @@
     "trailingComma": "es5"
   },
   "author": "fi3ework",
+  "bugs": {
+    "url": "https://github.com/fi3ework/rollup-plugin-fork-ts-checker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fi3ework/rollup-plugin-fork-ts-checker"
+  },
   "module": "dist/rollup-plugin-fork-ts-checker.esm.js",
   "devDependencies": {
     "@types/micromatch": "^4.0.1",
