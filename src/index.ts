@@ -1,4 +1,4 @@
-import { InputOptions } from 'rollup';
+import { InputOptions, RollupLogProps } from 'rollup';
 import * as path from 'path';
 import * as childProcess from 'child_process';
 import * as webpack from 'webpack';
@@ -342,10 +342,10 @@ class ForkTsCheckerWebpackPlugin {
       );
     }
 
-    // NOTE: buildStart
+    // NOTE: options
     // this.pluginStart();
-    // TODO:
-    // this.pluginStop();
+    // NOTE: buildStart
+    this.pluginStop();
     // NOTE: buildEnd
     // this.pluginCompile();
     // NOTE: generateBundle
@@ -361,18 +361,18 @@ class ForkTsCheckerWebpackPlugin {
     // : path.resolve(this.compiler.options.context, filePath);
   }
 
-  // TODO: almost work
+  // NOTE: compiler.hooks.run & compiler.hooks.watchRun -> options()
+  // TODO: consider multiple entry?
   public options = (options: InputOptions) => {
     this.isWatching = !!options.watch;
   };
 
-  // ftc
+  // NOTE: compiler.hooks.compile -> buildStart()
   public buildStart = (options: InputOptions): void => {
     console.log('🐶 buildStart hook');
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
       this.compiler
     );
-    // this.isWatching = true;
 
     this.compilationDone = false;
     forkTsCheckerHooks.serviceBeforeStart.callAsync(() => {
@@ -419,6 +419,7 @@ class ForkTsCheckerWebpackPlugin {
     });
   };
 
+  // NOTE: FTC
   public buildEnd = () => {
     console.log('🐶 buildEnd');
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
@@ -444,6 +445,7 @@ class ForkTsCheckerWebpackPlugin {
     // });
   };
 
+  // NOTE: FTC
   public generateBundle = () => {
     console.log('🐶 generateBundle');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -471,34 +473,33 @@ class ForkTsCheckerWebpackPlugin {
     // this.compiler.hooks.emit.tapAsync(checkerPluginName, emit);
   };
 
+  public pluginStop = () => {
+    process.on('exit', () => {
+      this.killService();
+    });
+  };
+
+  // NOTE: compiler.hooks.watchClose & compiler.hooks.done -> writeBundle()
   public writeBundle = () => {
     console.log('🐶 writeBundle');
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
       this.compiler
     );
 
-    // this.pluginDone 👇
+    // TODO: detect watchClose
     const watchClose = () => {
       this.killService();
     };
 
     const done = () => {
-      console.log(this.isWatching);
       if (!this.isWatching) {
-        console.log('kill');
         this.killService();
       }
     };
 
-    // this.compiler.hooks.watchClose.tap(checkerPluginName, watchClose);
     done();
-    // this.compiler.hooks.done.tap(checkerPluginName, done);
 
-    process.on('exit', () => {
-      this.killService();
-    });
-    // this.pluginDone 👆
-
+    // === pluginDone ===
     // this.compiler.hooks.done.tap(checkerPluginName, () => {
     if (!this.isWatching || !this.async) {
       return;
@@ -518,139 +519,6 @@ class ForkTsCheckerWebpackPlugin {
     this.compilationDone = true;
     // });
   };
-
-  private pluginStart() {
-    const run = (
-      compilation: webpack.compilation.Compilation,
-      callback: () => void
-    ) => {
-      this.isWatching = false;
-      callback();
-    };
-
-    const watchRun = (compiler: webpack.Compiler, callback: () => void) => {
-      this.isWatching = true;
-      callback();
-    };
-
-    this.compiler.hooks.run.tapAsync(checkerPluginName, run);
-    this.compiler.hooks.watchRun.tapAsync(checkerPluginName, watchRun);
-  }
-
-  private pluginStop() {
-    const watchClose = () => {
-      this.killService();
-    };
-
-    const done = () => {
-      if (!this.isWatching) {
-        this.killService();
-      }
-    };
-
-    this.compiler.hooks.watchClose.tap(checkerPluginName, watchClose);
-    this.compiler.hooks.done.tap(checkerPluginName, done);
-
-    process.on('exit', () => {
-      this.killService();
-    });
-  }
-
-  private pluginCompile() {
-    const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-      this.compiler
-    );
-
-    this.compiler.hooks.compile.tap(checkerPluginName, () => {
-      this.compilationDone = false;
-      forkTsCheckerHooks.serviceBeforeStart.callAsync(() => {
-        if (this.cancellationToken) {
-          // request cancellation if there is not finished job
-          this.cancellationToken.requestCancellation();
-          forkTsCheckerHooks.cancel.call(this.cancellationToken);
-        }
-        this.checkDone = false;
-
-        this.started = process.hrtime();
-
-        // create new token for current job
-        this.cancellationToken = new CancellationToken(this.typescript);
-        if (!this.service || !this.service.connected) {
-          this.spawnService();
-        }
-
-        try {
-          if (this.measureTime) {
-            this.startAt = this.performance.now();
-          }
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.serviceRpc!.rpc<RunPayload, RunResult>(
-            RUN,
-            this.cancellationToken.toJSON()
-          ).then(result => {
-            if (result) {
-              this.handleServiceMessage(result);
-            }
-          });
-        } catch (error) {
-          if (!this.silent && this.logger) {
-            this.logger.error(
-              chalk.red(
-                'Cannot start checker service: ' +
-                  (error ? error.toString() : 'Unknown error')
-              )
-            );
-          }
-
-          forkTsCheckerHooks.serviceStartError.call(error);
-        }
-      });
-    });
-  }
-
-  private pluginEmit() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const emit = (compilation: any, callback: () => void) => {
-      if (this.isWatching && this.async) {
-        callback();
-        return;
-      }
-
-      this.emitCallback = this.createEmitCallback(compilation, callback);
-
-      if (this.checkDone) {
-        this.emitCallback();
-      }
-
-      this.compilationDone = true;
-    };
-
-    this.compiler.hooks.emit.tapAsync(checkerPluginName, emit);
-  }
-
-  private pluginDone() {
-    const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-      this.compiler
-    );
-    this.compiler.hooks.done.tap(checkerPluginName, () => {
-      if (!this.isWatching || !this.async) {
-        return;
-      }
-
-      if (this.checkDone) {
-        this.doneCallback();
-      } else {
-        if (this.compiler) {
-          forkTsCheckerHooks.waiting.call();
-        }
-        if (!this.silent && this.logger) {
-          this.logger.info('Type checking in progress...');
-        }
-      }
-
-      this.compilationDone = true;
-    });
-  }
 
   private spawnService() {
     const env: { [key: string]: string | undefined } = {
@@ -843,8 +711,8 @@ class ForkTsCheckerWebpackPlugin {
         this.compiler
       );
       forkTsCheckerHooks.emit.call(this.diagnostics, this.lints, elapsed);
-
       this.diagnostics.concat(this.lints).forEach(issue => {
+        // const warning = diagnosticToWarning(ts, host, diagnostic);
         // webpack message format
         const formatted = {
           rawMessage: this.rawFormatter(issue),
@@ -858,11 +726,11 @@ class ForkTsCheckerWebpackPlugin {
 
         if (issue.severity === IssueSeverity.WARNING) {
           if (!this.ignoreLintWarnings) {
-            console.warn(formatted);
+            console.warn(formatted.message);
             // compilation.warnings.push(formatted);
           }
         } else {
-          console.error(formatted);
+          console.error(formatted.message);
           // compilation.errors.push(formatted);
         }
       });
