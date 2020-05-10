@@ -1,7 +1,6 @@
-import { InputOptions, RollupLogProps, PluginContext } from 'rollup'
+import { InputOptions, PluginContext } from 'rollup'
 import * as path from 'path'
 import * as childProcess from 'child_process'
-import * as webpack from 'webpack'
 import * as ts from 'typescript'
 import * as semver from 'semver'
 import chalk from 'chalk'
@@ -81,8 +80,8 @@ export class ForkTsCheckerWebpackPlugin {
   }
 
   public _options: Partial<ForkTsCheckerWebpackPlugin.Options>
-  private tsconfig!: string
-  private compilerOptions!: object
+  private tsconfig: string
+  private compilerOptions: object
   private eslint = false
   private eslintOptions: EslintOptions = {}
   private ignoreDiagnostics: number[]
@@ -94,7 +93,7 @@ export class ForkTsCheckerWebpackPlugin {
   private async: boolean
   private checkSyntacticErrors: boolean
   private memoryLimit: number
-  private formatter!: Formatter
+  private formatter: Formatter
   private rawFormatter!: Formatter
   private useTypescriptIncrementalApi!: boolean
   private resolveModuleNameModule: string | undefined
@@ -124,7 +123,7 @@ export class ForkTsCheckerWebpackPlugin {
   private service?: childProcess.ChildProcess
   protected serviceRpc?: RpcProvider
 
-  private vue!: VueOptions
+  private vue: VueOptions
 
   private measureTime!: boolean
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -192,6 +191,7 @@ export class ForkTsCheckerWebpackPlugin {
       // eslint-disable-next-line node/no-unsupported-features/node-builtins
       this.performance = require('perf_hooks').performance
     }
+
     this.apply('ftc')
   }
 
