@@ -1,4 +1,4 @@
-import { InputOptions, PluginContext } from 'rollup'
+import { InputOptions, PluginContext, RollupBuild } from 'rollup'
 import * as path from 'path'
 import * as childProcess from 'child_process'
 import * as ts from 'typescript'
@@ -75,8 +75,9 @@ export class ForkTsCheckerWebpackPlugin {
   public static readonly DEFAULT_MEMORY_LIMIT = 2048
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public static getCompilerHooks(compiler: any) {
-    return getForkTsCheckerWebpackPluginHooks(inst as any)
+  public static getCompilerHooks(context: PluginContext) {
+    // TODO: no type check here?
+    return getForkTsCheckerWebpackPluginHooks(context)
   }
 
   public _options: Partial<ForkTsCheckerWebpackPlugin.Options>
@@ -192,7 +193,7 @@ export class ForkTsCheckerWebpackPlugin {
       this.performance = require('perf_hooks').performance
     }
 
-    this.apply('ftc')
+    this.apply('')
   }
 
   private validateTypeScript(
@@ -268,9 +269,9 @@ export class ForkTsCheckerWebpackPlugin {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public apply(compiler: any) {
-    this.compiler = compiler
+  public apply(compiler?: any) {
     console.log('apply')
+    // this.compiler = compiler
 
     this.tsconfigPath = this.computeContextPath(this.tsconfig)
 
@@ -322,6 +323,7 @@ export class ForkTsCheckerWebpackPlugin {
   // TODO: consider multiple entry?
   public options = (options: InputOptions) => {
     console.log('🐶', 'options')
+    this.compiler = options
     this.isWatching = !!options.watch
   }
 
@@ -375,32 +377,6 @@ export class ForkTsCheckerWebpackPlugin {
         forkTsCheckerHooks.serviceStartError.call(error)
       }
     })
-  }
-
-  // NOTE: FTC
-  public buildEnd = () => {
-    console.log('🐶 buildEnd')
-    const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-      this.compiler
-    )
-    // this.compiler.hooks.done.tap(checkerPluginName, () => {
-    if (!this.isWatching || !this.async) {
-      return
-    }
-
-    if (this.checkDone) {
-      this.doneCallback()
-    } else {
-      if (this.compiler) {
-        forkTsCheckerHooks.waiting.call()
-      }
-      if (!this.silent && this.logger) {
-        this.logger.info('Type checking in progress...')
-      }
-    }
-
-    this.compilationDone = true
-    // });
   }
 
   // NOTE: FTC
