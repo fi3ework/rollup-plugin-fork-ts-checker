@@ -1,10 +1,12 @@
 import { PluginHooks } from 'rollup'
 import { ForkTsCheckerWebpackPlugin } from './ForkTsCheckerWebpackPlugin'
 
-// TODO: options
-export default (): Partial<PluginHooks> => {
-  const forkPlugin = new ForkTsCheckerWebpackPlugin()
+export default (
+  options: Partial<ForkTsCheckerWebpackPlugin.Options>
+): Partial<PluginHooks> => {
+  const forkPlugin = new ForkTsCheckerWebpackPlugin(options)
   return {
+    name: 'fork-ts-checker-webpack-plugin',
     options(inputOptions) {
       forkPlugin.options(inputOptions)
       return null

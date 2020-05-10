@@ -27,34 +27,7 @@ import { Issue, IssueSeverity } from 'fork-ts-checker-webpack-plugin/lib/issue'
 import { VueOptions } from 'fork-ts-checker-webpack-plugin/lib/types/vue-options'
 import { Options as EslintOptions } from 'fork-ts-checker-webpack-plugin/lib/types/eslint'
 
-const checkerPluginName = 'fork-ts-checker-webpack-plugin'
-
-// export default function RollupPluginForkTsChecker() {
-
-// export default () => {
-//   return {
-//     name: 'rollup-plugin-fork-ts-checker', // this name will show up in warnings and errors
-//     buildStart() {
-//       throw new Error('jjj');
-//     },
-//     resolveId(source: string) {
-//       throw new Error('mmm');
-//       if (source === 'virtual-module') {
-//         return source; // this signals that rollup should not ask other plugins or check the file system to find this id
-//       }
-//       return null; // other ids should be handled as usually
-//     },
-//     load(id: string) {
-//       throw new Error('nnn');
-//       if (id === 'virtual-module') {
-//         return 'export default "This is virtual!"'; // the source code for "virtual-module"
-//       }
-//       return null; // other ids should be handled as usually
-//     },
-//   };
-// };
-
-namespace ForkTsCheckerWebpackPlugin {
+export namespace ForkTsCheckerWebpackPlugin {
   export interface Logger {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error(message?: any): void
@@ -107,31 +80,19 @@ export class ForkTsCheckerWebpackPlugin {
     return getForkTsCheckerWebpackPluginHooks(inst as any)
   }
 
-  // @ts-ignore
-  // public options: Partial<ForkTsCheckerWebpackPlugin.Options>;
-  // @ts-ignore
   public _options: Partial<ForkTsCheckerWebpackPlugin.Options>
   private tsconfig!: string
   private compilerOptions!: object
   private eslint = false
   private eslintOptions: EslintOptions = {}
-  // @ts-ignore
   private ignoreDiagnostics: number[]
-  // @ts-ignore
   private ignoreLints: string[]
-  // @ts-ignore
   private ignoreLintWarnings: boolean
-  // @ts-ignore
   private reportFiles: string[]
-  // @ts-ignore
   private logger: ForkTsCheckerWebpackPlugin.Logger
-  // @ts-ignore
   private silent: boolean
-  // @ts-ignore
   private async: boolean
-  // @ts-ignore
   private checkSyntacticErrors: boolean
-  // @ts-ignore
   private memoryLimit: number
   private formatter!: Formatter
   private rawFormatter!: Formatter
@@ -723,14 +684,10 @@ export class ForkTsCheckerWebpackPlugin {
 
         if (issue.severity === IssueSeverity.WARNING) {
           if (!this.ignoreLintWarnings) {
-            // console.warn(formatted.message)
             pluginContext.warn(formatted)
-            // compilation.warnings.push(formatted);
           }
         } else {
-            pluginContext.error(formatted)
-            // console.error(formatted.message)
-          // compilation.errors.push(formatted);
+          pluginContext.error(formatted)
         }
       })
 
