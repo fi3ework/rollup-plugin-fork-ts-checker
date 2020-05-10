@@ -1,6 +1,6 @@
-import { RollupBuild } from 'rollup';
-import * as webpack from 'webpack';
-import { AsyncSeriesHook, SyncHook } from 'tapable';
+import { RollupBuild } from 'rollup'
+import * as webpack from 'webpack'
+import { AsyncSeriesHook, SyncHook } from 'tapable'
 
 export type ForkTsCheckerHooks =
   | 'serviceBeforeStart'
@@ -11,13 +11,13 @@ export type ForkTsCheckerHooks =
   | 'receive'
   | 'serviceOutOfMemory'
   | 'emit'
-  | 'done';
+  | 'done'
 type ForkTsCheckerHookMap = Record<
   ForkTsCheckerHooks,
   SyncHook | AsyncSeriesHook
->;
+>
 
-const compilerHookMap = new WeakMap<webpack.Compiler, ForkTsCheckerHookMap>();
+const compilerHookMap = new WeakMap<webpack.Compiler, ForkTsCheckerHookMap>()
 
 function createForkTsCheckerWebpackPluginHooks(): ForkTsCheckerHookMap {
   return {
@@ -29,15 +29,15 @@ function createForkTsCheckerWebpackPluginHooks(): ForkTsCheckerHookMap {
     receive: new SyncHook(['diagnostics', 'lints']),
     serviceOutOfMemory: new SyncHook([]),
     emit: new SyncHook(['diagnostics', 'lints', 'elapsed']),
-    done: new SyncHook(['diagnostics', 'lints', 'elapsed']),
-  };
+    done: new SyncHook(['diagnostics', 'lints', 'elapsed'])
+  }
 }
 
 export function getForkTsCheckerWebpackPluginHooks(compiler: webpack.Compiler) {
-  let hooks = compilerHookMap.get(compiler);
+  let hooks = compilerHookMap.get(compiler)
   if (hooks === undefined) {
-    hooks = createForkTsCheckerWebpackPluginHooks();
-    compilerHookMap.set(compiler, hooks);
+    hooks = createForkTsCheckerWebpackPluginHooks()
+    compilerHookMap.set(compiler, hooks)
   }
-  return hooks;
+  return hooks
 }

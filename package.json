@@ -26,12 +26,6 @@
       "pre-commit": "tsdx lint"
     }
   },
-  "prettier": {
-    "printWidth": 80,
-    "semi": true,
-    "singleQuote": true,
-    "trailingComma": "es5"
-  },
   "author": "fi3ework",
   "bugs": {
     "url": "https://github.com/fi3ework/rollup-plugin-fork-ts-checker/issues"
