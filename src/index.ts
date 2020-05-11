@@ -8,7 +8,8 @@ export default (
   return {
     name: 'fork-ts-checker-webpack-plugin',
     options(inputOptions) {
-      forkPlugin.options(inputOptions)
+      const pluginContext = this
+      forkPlugin.options(inputOptions, pluginContext)
       return null
     },
     buildStart(options) {

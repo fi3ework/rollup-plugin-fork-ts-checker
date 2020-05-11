@@ -1,5 +1,5 @@
 import path from 'path'
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin/lib/index'
+import { ForkTsCheckerWebpackPlugin } from '../../lib/ForkTsCheckerWebpackPlugin'
 import * as helpers from './helpers'
 import { cloneDeep } from 'lodash'
 import unixify from 'unixify'
@@ -54,315 +54,326 @@ describe.each([[true], [false]])(
       expect(plugin['logger']).toBe(console)
     })
 
-    it('should find semantic errors', callback => {
+    it('should find semantic errors', async callback => {
       const compiler = createCompiler({
         pluginOptions: {
           tsconfig: 'tsconfig-semantic-error-only.json'
         }
       })
 
-      compiler.run((err, stats) => {
-        expect(stats.compilation.errors.length).toBeGreaterThanOrEqual(1)
-        callback()
-      })
-    })
-
-    it('should support custom resolution', callback => {
-      const compiler = createCompiler({
-        pluginOptions: {
-          tsconfig: 'tsconfig-weird-resolutions.json',
-          resolveModuleNameModule: path.resolve(
-            __dirname,
-            '../fixtures/project/',
-            'weirdResolver.js'
-          ),
-          resolveTypeReferenceDirectiveModule: path.resolve(
-            __dirname,
-            '../fixtures/project/',
-            'weirdResolver.js'
-          )
-        }
-      })
-
-      compiler.run((err, stats) => {
-        expect(stats.compilation.errors.length).toBe(0)
-        callback()
-      })
-    })
-
-    ifNotIncrementalIt(
-      'should support custom resolution w/ "paths"',
-      callback => {
-        const compiler = createCompiler({
-          pluginOptions: {
-            tsconfig: 'tsconfig-weird-resolutions-with-paths.json',
-            resolveModuleNameModule: path.resolve(
-              __dirname,
-              '../fixtures/project/',
-              'weirdResolver.js'
-            ),
-            resolveTypeReferenceDirectiveModule: path.resolve(
-              __dirname,
-              '../fixtures/project/',
-              'weirdResolver.js'
-            )
-          }
-        })
-
-        compiler.run((err, stats) => {
-          expect(stats.compilation.errors.length).toBe(0)
-          callback()
-        })
+      const bundle = await compiler()
+      try {
+        await bundle.generate({})
+      } catch (e) {
+        console.log('🐷', e)
       }
-    )
 
-    ifNodeGte8It('should detect eslints', callback => {
-      const compiler = createCompiler({
-        context: './project_eslint',
-        entryPoint: './src/index.ts',
-        pluginOptions: { eslint: true }
-      })
+      // output.forEach((o) => {
+      //   o.
+      // })
 
-      compiler.run((err, stats) => {
-        const { warnings, errors } = stats.compilation
-        expect(warnings.length).toBe(2)
-
-        const [warning, warning2] = warnings
-        const actualFile = unixify(warning.file)
-        const expectedFile = unixify('src/lib/func.ts')
-        expect(actualFile).toContain(expectedFile)
-        expect(warning.rawMessage).toContain('WARNING')
-        expect(warning.rawMessage).toContain('@typescript-eslint/array-type')
-        expect(warning.rawMessage).toContain(
-          "Array type using 'Array<string>' is forbidden. Use 'string[]' instead."
-        )
-        expect(warning.location).toEqual({
-          character: 44,
-          line: 3
-        })
-
-        const actualFile2 = unixify(warning2.file)
-        const expectedFile2 = unixify('src/lib/otherFunc.js')
-        expect(actualFile2).toContain(expectedFile2)
-        expect(warning2.rawMessage).toContain('WARNING')
-        expect(warning2.rawMessage).toContain(
-          '@typescript-eslint/no-unused-vars'
-        )
-        expect(warning2.rawMessage).toContain(
-          "'i' is assigned a value but never used."
-        )
-        expect(warning2.location).toEqual({
-          character: 5,
-          line: 4
-        })
-
-        const error = errors.find(err =>
-          err.rawMessage.includes('@typescript-eslint/array-type')
-        )
-        const actualErrorFile = unixify(error.file)
-        const expectedErrorFile = unixify('src/index.ts')
-        expect(actualErrorFile).toContain(expectedErrorFile)
-        expect(error.rawMessage).toContain('ERROR')
-        expect(error.rawMessage).toContain('@typescript-eslint/array-type')
-        expect(error.rawMessage).toContain(
-          "Array type using 'Array<string>' is forbidden. Use 'string[]' instead."
-        )
-        expect(error.location).toEqual({
-          character: 43,
-          line: 5
-        })
-
-        callback()
-      })
+      //   compiler.run((err, stats) => {
+      //     expect(stats.compilation.errors.length).toBeGreaterThanOrEqual(1)
+      //     callback()
+      //   })
     })
 
-    ifNodeLt8It(
-      'throws an error about Node.js version required for `eslint` option',
-      () => {
-        expect(() => {
-          createCompiler({
-            context: './project_eslint',
-            entryPoint: './src/index.ts',
-            pluginOptions: { eslint: true }
-          })
-        }).toThrowError(
-          `To use 'eslint' option, please update to Node.js >= v8.10.0 ` +
-            `(current version is ${process.version})`
-        )
-      }
-    )
+    // it('should support custom resolution', callback => {
+    //   const compiler = createCompiler({
+    //     pluginOptions: {
+    //       tsconfig: 'tsconfig-weird-resolutions.json',
+    //       resolveModuleNameModule: path.resolve(
+    //         __dirname,
+    //         '../fixtures/project/',
+    //         'weirdResolver.js'
+    //       ),
+    //       resolveTypeReferenceDirectiveModule: path.resolve(
+    //         __dirname,
+    //         '../fixtures/project/',
+    //         'weirdResolver.js'
+    //       )
+    //     }
+    //   })
 
-    it('should block emit on build mode', callback => {
-      const compiler = createCompiler()
+    //   compiler.run((err, stats) => {
+    //     expect(stats.compilation.errors.length).toBe(0)
+    //     callback()
+    //   })
+    // })
 
-      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        compiler
-      )
-      forkTsCheckerHooks.emit.tap('should block emit on build mode', () => {
-        expect(true).toBe(true)
-        callback()
-      })
+    // ifNotIncrementalIt(
+    //   'should support custom resolution w/ "paths"',
+    //   callback => {
+    //     const compiler = createCompiler({
+    //       pluginOptions: {
+    //         tsconfig: 'tsconfig-weird-resolutions-with-paths.json',
+    //         resolveModuleNameModule: path.resolve(
+    //           __dirname,
+    //           '../fixtures/project/',
+    //           'weirdResolver.js'
+    //         ),
+    //         resolveTypeReferenceDirectiveModule: path.resolve(
+    //           __dirname,
+    //           '../fixtures/project/',
+    //           'weirdResolver.js'
+    //         )
+    //       }
+    //     })
 
-      compiler.run(() => {
-        /**/
-      })
-    })
+    //     compiler.run((err, stats) => {
+    //       expect(stats.compilation.errors.length).toBe(0)
+    //       callback()
+    //     })
+    //   }
+    // )
 
-    it('should not block emit on watch mode', callback => {
-      const compiler = createCompiler()
-      const watching = compiler.watch({}, () => {
-        /**/
-      })
+    // ifNodeGte8It('should detect eslints', callback => {
+    //   const compiler = createCompiler({
+    //     context: './project_eslint',
+    //     entryPoint: './src/index.ts',
+    //     pluginOptions: { eslint: true }
+    //   })
 
-      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        compiler
-      )
-      forkTsCheckerHooks.done.tap('should not block emit on watch mode', () => {
-        watching.close(() => {
-          expect(true).toBe(true)
-          callback()
-        })
-      })
-    })
+    //   compiler.run((err, stats) => {
+    //     const { warnings, errors } = stats.compilation
+    //     expect(warnings.length).toBe(2)
 
-    it('should block emit if async flag is false', callback => {
-      const compiler = createCompiler({ pluginOptions: { async: false } })
-      const watching = compiler.watch({}, () => {
-        /**/
-      })
+    //     const [warning, warning2] = warnings
+    //     const actualFile = unixify(warning.file)
+    //     const expectedFile = unixify('src/lib/func.ts')
+    //     expect(actualFile).toContain(expectedFile)
+    //     expect(warning.rawMessage).toContain('WARNING')
+    //     expect(warning.rawMessage).toContain('@typescript-eslint/array-type')
+    //     expect(warning.rawMessage).toContain(
+    //       "Array type using 'Array<string>' is forbidden. Use 'string[]' instead."
+    //     )
+    //     expect(warning.location).toEqual({
+    //       character: 44,
+    //       line: 3
+    //     })
 
-      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        compiler
-      )
-      forkTsCheckerHooks.emit.tap(
-        'should block emit if async flag is false',
-        () => {
-          watching.close(() => {
-            expect(true).toBe(true)
-            callback()
-          })
-        }
-      )
-    })
+    //     const actualFile2 = unixify(warning2.file)
+    //     const expectedFile2 = unixify('src/lib/otherFunc.js')
+    //     expect(actualFile2).toContain(expectedFile2)
+    //     expect(warning2.rawMessage).toContain('WARNING')
+    //     expect(warning2.rawMessage).toContain(
+    //       '@typescript-eslint/no-unused-vars'
+    //     )
+    //     expect(warning2.rawMessage).toContain(
+    //       "'i' is assigned a value but never used."
+    //     )
+    //     expect(warning2.location).toEqual({
+    //       character: 5,
+    //       line: 4
+    //     })
 
-    it('kills the service when the watch is done', done => {
-      const compiler = createCompiler()
-      const watching = compiler.watch({}, () => {
-        /**/
-      })
+    //     const error = errors.find(err =>
+    //       err.rawMessage.includes('@typescript-eslint/array-type')
+    //     )
+    //     const actualErrorFile = unixify(error.file)
+    //     const expectedErrorFile = unixify('src/index.ts')
+    //     expect(actualErrorFile).toContain(expectedErrorFile)
+    //     expect(error.rawMessage).toContain('ERROR')
+    //     expect(error.rawMessage).toContain('@typescript-eslint/array-type')
+    //     expect(error.rawMessage).toContain(
+    //       "Array type using 'Array<string>' is forbidden. Use 'string[]' instead."
+    //     )
+    //     expect(error.location).toEqual({
+    //       character: 43,
+    //       line: 5
+    //     })
 
-      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        compiler
-      )
-      forkTsCheckerHooks.done.tap(
-        'kills the service when the watch is done',
-        () => {
-          watching.close(() => {
-            expect(killServiceWasCalled()).toBe(true)
-            done()
-          })
-        }
-      )
-    })
+    //     callback()
+    //   })
+    // })
 
-    it('should throw error if config container wrong tsconfig.json path', () => {
-      expect(() => {
-        createCompiler({
-          pluginOptions: {
-            tsconfig: '/some/path/that/not/exists/tsconfig.json'
-          }
-        })
-      }).toThrowError()
-    })
+    // ifNodeLt8It(
+    //   'throws an error about Node.js version required for `eslint` option',
+    //   () => {
+    //     expect(() => {
+    //       createCompiler({
+    //         context: './project_eslint',
+    //         entryPoint: './src/index.ts',
+    //         pluginOptions: { eslint: true }
+    //       })
+    //     }).toThrowError(
+    //       `To use 'eslint' option, please update to Node.js >= v8.10.0 ` +
+    //         `(current version is ${process.version})`
+    //     )
+    //   }
+    // )
 
-    it('should allow delaying service-start', callback => {
-      const compiler = createCompiler()
-      let delayed = false
+    // it('should block emit on build mode', callback => {
+    //   const compiler = createCompiler()
 
-      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        compiler
-      )
-      forkTsCheckerHooks.serviceBeforeStart.tapAsync(
-        'should allow delaying service-start',
-        (cb: () => void) => {
-          setTimeout(() => {
-            delayed = true
+    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+    //     compiler
+    //   )
+    //   forkTsCheckerHooks.emit.tap('should block emit on build mode', () => {
+    //     expect(true).toBe(true)
+    //     callback()
+    //   })
 
-            cb()
-          }, 0)
-        }
-      )
+    //   compiler.run(() => {
+    //     /**/
+    //   })
+    // })
 
-      forkTsCheckerHooks.serviceBeforeStart.tap(
-        'should allow delaying service-start',
-        () => {
-          expect(delayed).toBe(true)
-          callback()
-        }
-      )
+    // it('should not block emit on watch mode', callback => {
+    //   const compiler = createCompiler()
+    //   const watching = compiler.watch({}, () => {
+    //     /**/
+    //   })
 
-      compiler.run(() => {
-        /**  */
-      })
-    })
+    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+    //     compiler
+    //   )
+    //   forkTsCheckerHooks.done.tap('should not block emit on watch mode', () => {
+    //     watching.close(() => {
+    //       expect(true).toBe(true)
+    //       callback()
+    //     })
+    //   })
+    // })
 
-    it('should not find syntactic errors when checkSyntacticErrors is false', callback => {
-      const compiler = createCompiler({
-        pluginOptions: { checkSyntacticErrors: false },
-        happyPackMode: true
-      })
+    // it('should block emit if async flag is false', callback => {
+    //   const compiler = createCompiler({ pluginOptions: { async: false } })
+    //   const watching = compiler.watch({}, () => {
+    //     /**/
+    //   })
 
-      compiler.run((_error, stats) => {
-        const syntacticErrorNotFoundInStats = stats.compilation.errors.every(
-          error =>
-            !error.rawMessage.includes(
-              helpers.expectedErrorCodes.expectedSyntacticErrorCode
-            )
-        )
-        expect(syntacticErrorNotFoundInStats).toBe(true)
-        callback()
-      })
-    })
+    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+    //     compiler
+    //   )
+    //   forkTsCheckerHooks.emit.tap(
+    //     'should block emit if async flag is false',
+    //     () => {
+    //       watching.close(() => {
+    //         expect(true).toBe(true)
+    //         callback()
+    //       })
+    //     }
+    //   )
+    // })
 
-    it('should find syntactic errors when checkSyntacticErrors is true', callback => {
-      const compiler = createCompiler({
-        pluginOptions: { checkSyntacticErrors: true },
-        happyPackMode: true
-      })
+    // it('kills the service when the watch is done', done => {
+    //   const compiler = createCompiler()
+    //   const watching = compiler.watch({}, () => {
+    //     /**/
+    //   })
 
-      compiler.run((_error, stats) => {
-        const syntacticErrorFoundInStats = stats.compilation.errors.some(
-          error =>
-            error.rawMessage.includes(
-              helpers.expectedErrorCodes.expectedSyntacticErrorCode
-            )
-        )
-        expect(syntacticErrorFoundInStats).toBe(true)
-        callback()
-      })
-    })
+    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+    //     compiler
+    //   )
+    //   forkTsCheckerHooks.done.tap(
+    //     'kills the service when the watch is done',
+    //     () => {
+    //       watching.close(() => {
+    //         expect(killServiceWasCalled()).toBe(true)
+    //         done()
+    //       })
+    //     }
+    //   )
+    // })
 
-    /**
-     * regression test for #267, #299
-     */
-    it('should work even when the plugin has been deep-cloned', callback => {
-      const compiler = createCompiler({
-        pluginOptions: {
-          tsconfig: 'tsconfig-semantic-error-only.json'
-        },
-        prepareWebpackConfig({ plugins, ...config }) {
-          return { ...config, plugins: cloneDeep(plugins) }
-        }
-      })
+    // it('should throw error if config container wrong tsconfig.json path', () => {
+    //   expect(() => {
+    //     createCompiler({
+    //       pluginOptions: {
+    //         tsconfig: '/some/path/that/not/exists/tsconfig.json'
+    //       }
+    //     })
+    //   }).toThrowError()
+    // })
 
-      compiler.run((err, stats) => {
-        expect(stats.compilation.errors).toEqual([
-          expect.objectContaining({
-            message: expect.stringContaining('TS2322')
-          })
-        ])
-        callback()
-      })
-    })
+    // it('should allow delaying service-start', callback => {
+    //   const compiler = createCompiler()
+    //   let delayed = false
+
+    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+    //     compiler
+    //   )
+    //   forkTsCheckerHooks.serviceBeforeStart.tapAsync(
+    //     'should allow delaying service-start',
+    //     (cb: () => void) => {
+    //       setTimeout(() => {
+    //         delayed = true
+
+    //         cb()
+    //       }, 0)
+    //     }
+    //   )
+
+    //   forkTsCheckerHooks.serviceBeforeStart.tap(
+    //     'should allow delaying service-start',
+    //     () => {
+    //       expect(delayed).toBe(true)
+    //       callback()
+    //     }
+    //   )
+
+    //   compiler.run(() => {
+    //     /**  */
+    //   })
+    // })
+
+    // it('should not find syntactic errors when checkSyntacticErrors is false', callback => {
+    //   const compiler = createCompiler({
+    //     pluginOptions: { checkSyntacticErrors: false },
+    //     happyPackMode: true
+    //   })
+
+    //   compiler.run((_error, stats) => {
+    //     const syntacticErrorNotFoundInStats = stats.compilation.errors.every(
+    //       error =>
+    //         !error.rawMessage.includes(
+    //           helpers.expectedErrorCodes.expectedSyntacticErrorCode
+    //         )
+    //     )
+    //     expect(syntacticErrorNotFoundInStats).toBe(true)
+    //     callback()
+    //   })
+    // })
+
+    // it('should find syntactic errors when checkSyntacticErrors is true', callback => {
+    //   const compiler = createCompiler({
+    //     pluginOptions: { checkSyntacticErrors: true },
+    //     happyPackMode: true
+    //   })
+
+    //   compiler.run((_error, stats) => {
+    //     const syntacticErrorFoundInStats = stats.compilation.errors.some(
+    //       error =>
+    //         error.rawMessage.includes(
+    //           helpers.expectedErrorCodes.expectedSyntacticErrorCode
+    //         )
+    //     )
+    //     expect(syntacticErrorFoundInStats).toBe(true)
+    //     callback()
+    //   })
+    // })
+
+    // /**
+    //  * regression test for #267, #299
+    //  */
+    // it('should work even when the plugin has been deep-cloned', callback => {
+    //   const compiler = createCompiler({
+    //     pluginOptions: {
+    //       tsconfig: 'tsconfig-semantic-error-only.json'
+    //     },
+    //     prepareWebpackConfig({ plugins, ...config }) {
+    //       return { ...config, plugins: cloneDeep(plugins) }
+    //     }
+    //   })
+
+    //   compiler.run((err, stats) => {
+    //     expect(stats.compilation.errors).toEqual([
+    //       expect.objectContaining({
+    //         message: expect.stringContaining('TS2322')
+    //       })
+    //     ])
+    //     callback()
+    //   })
+    // })
   }
 )

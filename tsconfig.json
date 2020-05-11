@@ -1,21 +1,12 @@
 {
-  "include": ["src", "types"],
   "compilerOptions": {
-    "module": "esnext",
-    "lib": ["dom", "esnext"],
-    "importHelpers": true,
-    "declaration": true,
-    "sourceMap": true,
-    "rootDir": "./src",
+    "target": "es5",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "strict": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
+    "lib": ["es2015"],
+    "module": "commonjs",
     "moduleResolution": "node",
-    "baseUrl": "./",
-    "paths": {
-      "*": ["src/*", "node_modules/*"]
-    },
-    "jsx": "react",
-    "esModuleInterop": true
+    "sourceMap": true
   }
 }

@@ -1,7 +1,7 @@
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin/lib'
+import { ForkTsCheckerWebpackPlugin } from '../../../lib/ForkTsCheckerWebpackPlugin'
 export { ForkTsCheckerWebpackPlugin }
 export { createCompiler, CreateCompilerOptions } from './createCompiler'
-export { createVueCompiler } from './createVueCompiler'
+// export { createVueCompiler } from './createVueCompiler'
 // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
 // @ts-ignore
 export { getRpcProvider, rpcMethods } from './rpc'

@@ -12,9 +12,9 @@
     "node": ">=10"
   },
   "scripts": {
-    "start": "tsdx watch",
-    "build": "tsdx build",
-    "test": "tsdx test",
+    "start": "tsc --watch --project ./src/tsconfig.json",
+    "build": "tsc",
+    "test": "jext:integration",
     "test:integration": "jest integration && rimraf tmp",
     "lint": "tsdx lint",
     "prepare": "tsdx build"

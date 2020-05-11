@@ -1,5 +1,5 @@
 // import webpack from 'webpack'
-import { rollup } from 'rollup'
+import { rollup, RollupOptions, RollupBuild } from 'rollup'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as copyDir from 'copy-dir'
@@ -44,7 +44,7 @@ export interface CreateCompilerOptions {
   context: string
   happyPackMode: boolean
   pluginOptions: Partial<ForkTsCheckerWebpackPlugin.Options>
-  prepareWebpackConfig(config: webpack.Configuration): webpack.Configuration
+  prepareRollupConfig(config: RollupOptions): RollupOptions
   nodeRequires: string[]
   normalizeDiagnosticsPaths: boolean
 }
@@ -54,8 +54,8 @@ const defaultOptions: Partial<ForkTsCheckerWebpackPlugin.Options> = {
 }
 
 interface CreateCompilerResults {
-  compiler: webpack.Compiler
-  readonly compilerConfig: webpack.Configuration
+  compiler: () => Promise<RollupBuild>
+  readonly compilerConfig: RollupOptions
   plugin: ForkTsCheckerWebpackPlugin
   contextDir: string
   outDir: string
@@ -111,7 +111,7 @@ export function createCompiler({
   happyPackMode = false,
   entryPoint = './src/index.ts',
   context = './project',
-  prepareWebpackConfig = config => config,
+  prepareRollupConfig = config => config,
   nodeRequires = [],
   normalizeDiagnosticsPaths: normalizePaths = true
 }: Partial<CreateCompilerOptions> = {}): CreateCompilerResults {
@@ -130,13 +130,11 @@ export function createCompiler({
     ? { happyPackMode: true, silent: true }
     : { transpileOnly: true, silent: true }
 
-  const compilerConfig = prepareWebpackConfig({
+  const compilerConfig = prepareRollupConfig({
     mode: 'development',
     context: contextDir,
     entry: entryPoint,
-    output: {
-      path: outDir
-    },
+    dir: outDir,
     resolve: {
       extensions: ['.ts', '.js', '.tsx', '.json']
     },
@@ -149,27 +147,33 @@ export function createCompiler({
         }
       ]
     },
+    // @ts-ignore
     plugins: [plugin]
   })
 
-  const compiler = webpack(compilerConfig)
+  // const compiler = await rollup(compilerConfig)
+  const compiler = () => rollup(compilerConfig)
 
-  if (normalizePaths) {
-    const originalRun = compiler.run
-    compiler.run = handler => {
-      originalRun.call(compiler, (error: Error, stats: webpack.Stats) => {
-        stats.compilation.errors = normalizeDiagnosticsPaths(
-          stats.compilation.errors,
-          contextDir
-        )
-        stats.compilation.warnings = normalizeDiagnosticsPaths(
-          stats.compilation.warnings,
-          contextDir
-        )
-        return handler(error, stats)
-      })
-    }
-  }
+  // if (normalizePaths) {
+  //   const originalRun = compiler.run
+  //   rollup(compilerConfig).then(() => {
+
+  //   })
+
+  //   compiler.run = handler => {
+  //     originalRun.call(compiler, (error: Error, stats: webpack.Stats) => {
+  //       stats.compilation.errors = normalizeDiagnosticsPaths(
+  //         stats.compilation.errors,
+  //         contextDir
+  //       )
+  //       stats.compilation.warnings = normalizeDiagnosticsPaths(
+  //         stats.compilation.warnings,
+  //         contextDir
+  //       )
+  //       return handler(error, stats)
+  //     })
+  //   }
+  // }
 
   return {
     compiler,

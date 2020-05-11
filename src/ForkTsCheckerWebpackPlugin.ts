@@ -1,4 +1,9 @@
-import { InputOptions, PluginContext, RollupBuild } from 'rollup'
+import {
+  InputOptions,
+  PluginContext,
+  RollupBuild,
+  MinimalPluginContext
+} from 'rollup'
 import * as path from 'path'
 import * as childProcess from 'child_process'
 import * as ts from 'typescript'
@@ -61,8 +66,6 @@ export namespace ForkTsCheckerWebpackPlugin {
     resolveTypeReferenceDirectiveModule: string
   }
 }
-
-const inst = {}
 
 /**
  * ForkTsCheckerWebpackPlugin
@@ -193,7 +196,7 @@ export class ForkTsCheckerWebpackPlugin {
       this.performance = require('perf_hooks').performance
     }
 
-    this.apply('')
+    // this.apply('')
   }
 
   private validateTypeScript(
@@ -315,15 +318,19 @@ export class ForkTsCheckerWebpackPlugin {
   private computeContextPath(filePath: string) {
     return path.isAbsolute(filePath)
       ? filePath
-      : path.resolve(process.cwd(), filePath)
-    // : path.resolve(this.compiler.options.context, filePath);
+      : // : path.resolve(process.cwd(), filePath)
+        path.resolve(this.compiler.options.context, filePath)
   }
 
   // NOTE: compiler.hooks.run & compiler.hooks.watchRun -> options()
   // TODO: consider multiple entry?
-  public options = (options: InputOptions) => {
+  public options = (
+    options: InputOptions,
+    pluginContext: MinimalPluginContext
+  ) => {
     console.log('🐶', 'options')
-    this.compiler = options
+    this.apply('')
+    this.compiler = { options }
     this.isWatching = !!options.watch
   }
 

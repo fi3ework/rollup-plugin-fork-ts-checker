@@ -17,7 +17,7 @@ try {
 export async function createVueCompiler({
   context = './vue',
   nodeRequires = [],
-  prepareWebpackConfig = x => x,
+  prepareRollupConfig = x => x,
   ...otherOptions
 }: Partial<CreateCompilerOptions> = {}) {
   const results = createCompiler({
@@ -28,8 +28,8 @@ export async function createVueCompiler({
       '../mocks/IncrementalCheckerWithRpc.js',
       '../mocks/ApiIncrementalCheckerWithRpc.js'
     ],
-    prepareWebpackConfig(config) {
-      return prepareWebpackConfig({
+    prepareRollupConfig(config) {
+      return prepareRollupConfig({
         ...config,
         resolve: {
           extensions: ['.ts', '.js', '.vue', '.json'],
