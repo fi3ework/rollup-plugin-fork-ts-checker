@@ -1,15 +1,15 @@
-import * as VueLoader from 'vue-loader'; // import for types alone
-import * as path from 'path';
-import { RpcProvider } from 'worker-rpc';
+import * as VueLoader from 'vue-loader' // import for types alone
+import * as path from 'path'
+import { RpcProvider } from 'worker-rpc'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
 // @ts-ignore
-import { rpcMethods } from './rpc';
-import { CreateCompilerOptions, createCompiler } from '.';
+import { rpcMethods } from './rpc'
+import { CreateCompilerOptions, createCompiler } from '.'
 
-let VueLoaderPlugin: typeof VueLoader.VueLoaderPlugin;
+let VueLoaderPlugin: typeof VueLoader.VueLoaderPlugin
 try {
-  VueLoaderPlugin = require('vue-loader/lib/plugin');
+  VueLoaderPlugin = require('vue-loader/lib/plugin')
 } catch {
   /** older versions of vue-loader come without that import - that's fine. */
 }
@@ -64,11 +64,11 @@ export async function createVueCompiler({
           ...(config.plugins || []),
           ...(!!VueLoaderPlugin ? [new VueLoaderPlugin()] : [])
         ]
-      });
+      })
     }
-  });
+  })
 
-  const { compilerConfig, plugin } = results;
+  const { compilerConfig, plugin } = results
 
   const files = {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -78,27 +78,27 @@ export async function createVueCompiler({
       compilerConfig.context!,
       'src/syntacticError.ts'
     )
-  };
+  }
 
-  plugin['spawnService']();
+  plugin['spawnService']()
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const rpcProvider: RpcProvider = plugin['serviceRpc']!;
-  await rpcProvider.rpc(rpcMethods.nextIteration);
+  const rpcProvider: RpcProvider = plugin['serviceRpc']!
+  await rpcProvider.rpc(rpcMethods.nextIteration)
 
   return {
     ...results,
     files,
     rpcProvider,
     getKnownFileNames(): Promise<string[]> {
-      return rpcProvider.rpc(rpcMethods.getKnownFileNames);
+      return rpcProvider.rpc(rpcMethods.getKnownFileNames)
     },
     getSourceFile(fileName: string): Promise<{ text: string } | undefined> {
-      return rpcProvider.rpc(rpcMethods.getSourceFile, fileName);
+      return rpcProvider.rpc(rpcMethods.getSourceFile, fileName)
     },
     getSyntacticDiagnostics(): Promise<
       { start: number; length: number; file: { text: string } }[] | undefined
     > {
-      return rpcProvider.rpc(rpcMethods.getSyntacticDiagnostics);
+      return rpcProvider.rpc(rpcMethods.getSyntacticDiagnostics)
     }
-  };
+  }
 }

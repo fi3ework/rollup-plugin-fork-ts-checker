@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+      "jsx": "preserve",
+      "noUnusedLocals": true,
+      "lib": ["es2016", "dom"]
+  },
+  "include": [
+      "src/langs/*.ts",
+      "src/langs/*.vue"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
