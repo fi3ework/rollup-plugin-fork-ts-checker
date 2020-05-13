@@ -2,9 +2,12 @@ import { PluginHooks } from 'rollup'
 import { ForkTsCheckerWebpackPlugin } from './ForkTsCheckerWebpackPlugin'
 
 export default (
-  options: Partial<ForkTsCheckerWebpackPlugin.Options>
+  options: Partial<ForkTsCheckerWebpackPlugin.Options>,
+  pluginInstance?: ForkTsCheckerWebpackPlugin
 ): Partial<PluginHooks> => {
-  const forkPlugin = new ForkTsCheckerWebpackPlugin(options)
+  const forkPlugin = pluginInstance
+    ? pluginInstance
+    : new ForkTsCheckerWebpackPlugin(options)
   return {
     name: 'fork-ts-checker-webpack-plugin',
     options(inputOptions) {
@@ -20,9 +23,6 @@ export default (
       const pluginContext = this
       return forkPlugin.generateBundle(pluginContext)
     },
-    // pluginStop() {
-
-    // },
     writeBundle() {
       return forkPlugin.writeBundle()
     }

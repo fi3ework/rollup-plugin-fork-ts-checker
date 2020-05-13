@@ -1,2 +1,2 @@
 // Semantic error
-const x: number = '1';
+export const x: number = '1'

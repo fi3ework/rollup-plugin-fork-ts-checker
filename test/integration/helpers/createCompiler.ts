@@ -5,6 +5,8 @@ import * as fs from 'fs'
 import * as copyDir from 'copy-dir'
 import * as rimraf from 'rimraf'
 import { ForkTsCheckerWebpackPlugin } from './'
+import { Plugin } from './'
+import typescript from 'rollup-plugin-typescript2'
 
 if (!beforeAll || !afterAll) {
   throw new Error('file should not be included outside of jest!')
@@ -109,7 +111,7 @@ function normalizeDiagnosticsPaths(
 export function createCompiler({
   pluginOptions = {},
   happyPackMode = false,
-  entryPoint = './src/index.ts',
+  entryPoint = './test/fixtures/project/src/index.ts',
   context = './project',
   prepareRollupConfig = config => config,
   nodeRequires = [],
@@ -126,29 +128,37 @@ export function createCompiler({
   }, [])
   lastInstantiatedPlugin = plugin
 
+  const realPlugin = Plugin(pluginOptions, plugin)
   const tsLoaderOptions = happyPackMode
     ? { happyPackMode: true, silent: true }
     : { transpileOnly: true, silent: true }
 
   const compilerConfig = prepareRollupConfig({
-    mode: 'development',
+    // mode: 'development',
     context: contextDir,
-    entry: entryPoint,
-    dir: outDir,
-    resolve: {
-      extensions: ['.ts', '.js', '.tsx', '.json']
-    },
-    module: {
-      rules: [
-        {
-          test: /\.tsx?$/,
-          loader: 'ts-loader',
-          options: tsLoaderOptions
-        }
-      ]
-    },
-    // @ts-ignore
-    plugins: [plugin]
+    input: entryPoint,
+    output: { dir: outDir },
+    external: ['fork-ts-checker-webpack-plugin'],
+    // resolve: {
+    //   extensions: ['.ts', '.js', '.tsx', '.json']
+    // },
+    // module: {
+    //   rules: [
+    //     {
+    //       test: /\.tsx?$/,
+    //       loader: 'ts-loader',
+    //       options: tsLoaderOptions
+    //     }
+    //   ]
+    // },
+    plugins: [
+      // @ts-ignore
+      realPlugin,
+      typescript({
+        check: false,
+        tsconfigOverride: { compilerOptions: { module: 'es2015' } }
+      })
+    ]
   })
 
   // const compiler = await rollup(compilerConfig)

@@ -1,9 +1,13 @@
 import path from 'path'
-import { ForkTsCheckerWebpackPlugin } from '../../lib/ForkTsCheckerWebpackPlugin'
+import {
+  ForkTsCheckerWebpackPlugin,
+  withRawMessage
+} from '../../lib/ForkTsCheckerWebpackPlugin'
 import * as helpers from './helpers'
 import { cloneDeep } from 'lodash'
 import unixify from 'unixify'
 import * as semver from 'semver'
+import { RollupError, RollupWarning } from 'rollup'
 
 describe.each([[true], [false]])(
   '[INTEGRATION] common tests - useTypescriptIncrementalApi: %s',
@@ -55,169 +59,188 @@ describe.each([[true], [false]])(
     })
 
     it('should find semantic errors', async callback => {
+      const errors: RollupWarning | RollupError[] = []
+
       const compiler = createCompiler({
         pluginOptions: {
+          onError: err => errors.push(err),
           tsconfig: 'tsconfig-semantic-error-only.json'
         }
       })
 
       const bundle = await compiler()
-      try {
-        await bundle.generate({})
-      } catch (e) {
-        console.log('🐷', e)
-      }
-
-      // output.forEach((o) => {
-      //   o.
-      // })
-
-      //   compiler.run((err, stats) => {
-      //     expect(stats.compilation.errors.length).toBeGreaterThanOrEqual(1)
-      //     callback()
-      //   })
+      await bundle.generate({})
+      callback()
+      expect(errors.length).toBeGreaterThanOrEqual(1)
+      callback()
     })
 
-    // it('should support custom resolution', callback => {
-    //   const compiler = createCompiler({
-    //     pluginOptions: {
-    //       tsconfig: 'tsconfig-weird-resolutions.json',
-    //       resolveModuleNameModule: path.resolve(
-    //         __dirname,
-    //         '../fixtures/project/',
-    //         'weirdResolver.js'
-    //       ),
-    //       resolveTypeReferenceDirectiveModule: path.resolve(
-    //         __dirname,
-    //         '../fixtures/project/',
-    //         'weirdResolver.js'
-    //       )
-    //     }
-    //   })
+    it('should support custom resolution', async callback => {
+      const warnings: RollupWarning | RollupError[] = []
 
-    //   compiler.run((err, stats) => {
-    //     expect(stats.compilation.errors.length).toBe(0)
-    //     callback()
-    //   })
-    // })
+      const compiler = createCompiler({
+        pluginOptions: {
+          onWarn: err => warnings.push(err),
+          tsconfig: 'tsconfig-weird-resolutions.json',
+          resolveModuleNameModule: path.resolve(
+            __dirname,
+            '../fixtures/project/',
+            'weirdResolver.js'
+          ),
+          resolveTypeReferenceDirectiveModule: path.resolve(
+            __dirname,
+            '../fixtures/project/',
+            'weirdResolver.js'
+          )
+        }
+      })
 
-    // ifNotIncrementalIt(
-    //   'should support custom resolution w/ "paths"',
-    //   callback => {
-    //     const compiler = createCompiler({
-    //       pluginOptions: {
-    //         tsconfig: 'tsconfig-weird-resolutions-with-paths.json',
-    //         resolveModuleNameModule: path.resolve(
-    //           __dirname,
-    //           '../fixtures/project/',
-    //           'weirdResolver.js'
-    //         ),
-    //         resolveTypeReferenceDirectiveModule: path.resolve(
-    //           __dirname,
-    //           '../fixtures/project/',
-    //           'weirdResolver.js'
-    //         )
-    //       }
-    //     })
+      const bundle = await compiler()
+      await bundle.generate({})
+      callback()
+      expect(warnings.length).toBe(0)
+      callback()
+    })
 
-    //     compiler.run((err, stats) => {
-    //       expect(stats.compilation.errors.length).toBe(0)
-    //       callback()
-    //     })
-    //   }
-    // )
+    ifNotIncrementalIt(
+      'should support custom resolution w/ "paths"',
+      async callback => {
+        const warnings: RollupWarning | RollupError[] = []
 
-    // ifNodeGte8It('should detect eslints', callback => {
-    //   const compiler = createCompiler({
-    //     context: './project_eslint',
-    //     entryPoint: './src/index.ts',
-    //     pluginOptions: { eslint: true }
-    //   })
+        const compiler = createCompiler({
+          pluginOptions: {
+            onWarn: err => warnings.push(err),
+            tsconfig: 'tsconfig-weird-resolutions-with-paths.json',
+            resolveModuleNameModule: path.resolve(
+              __dirname,
+              '../fixtures/project/',
+              'weirdResolver.js'
+            ),
+            resolveTypeReferenceDirectiveModule: path.resolve(
+              __dirname,
+              '../fixtures/project/',
+              'weirdResolver.js'
+            )
+          }
+        })
 
-    //   compiler.run((err, stats) => {
-    //     const { warnings, errors } = stats.compilation
-    //     expect(warnings.length).toBe(2)
+        const bundle = await compiler()
+        await bundle.generate({})
+        callback()
+        expect(warnings.length).toBe(0)
+        callback()
+      }
+    )
 
-    //     const [warning, warning2] = warnings
-    //     const actualFile = unixify(warning.file)
-    //     const expectedFile = unixify('src/lib/func.ts')
-    //     expect(actualFile).toContain(expectedFile)
-    //     expect(warning.rawMessage).toContain('WARNING')
-    //     expect(warning.rawMessage).toContain('@typescript-eslint/array-type')
-    //     expect(warning.rawMessage).toContain(
-    //       "Array type using 'Array<string>' is forbidden. Use 'string[]' instead."
-    //     )
-    //     expect(warning.location).toEqual({
-    //       character: 44,
-    //       line: 3
-    //     })
+    ifNodeGte8It('should detect eslints', async callback => {
+      const warnings: withRawMessage<RollupWarning>[] = []
+      const errors: withRawMessage<RollupError>[] = []
 
-    //     const actualFile2 = unixify(warning2.file)
-    //     const expectedFile2 = unixify('src/lib/otherFunc.js')
-    //     expect(actualFile2).toContain(expectedFile2)
-    //     expect(warning2.rawMessage).toContain('WARNING')
-    //     expect(warning2.rawMessage).toContain(
-    //       '@typescript-eslint/no-unused-vars'
-    //     )
-    //     expect(warning2.rawMessage).toContain(
-    //       "'i' is assigned a value but never used."
-    //     )
-    //     expect(warning2.location).toEqual({
-    //       character: 5,
-    //       line: 4
-    //     })
+      const compiler = createCompiler({
+        context: './project_eslint',
+        entryPoint: './test/fixtures/project_eslint/src/index.ts',
+        pluginOptions: {
+          eslint: true,
+          onWarn: warn => warnings.push(warn),
+          onError: err => errors.push(err)
+        }
+      })
 
-    //     const error = errors.find(err =>
-    //       err.rawMessage.includes('@typescript-eslint/array-type')
-    //     )
-    //     const actualErrorFile = unixify(error.file)
-    //     const expectedErrorFile = unixify('src/index.ts')
-    //     expect(actualErrorFile).toContain(expectedErrorFile)
-    //     expect(error.rawMessage).toContain('ERROR')
-    //     expect(error.rawMessage).toContain('@typescript-eslint/array-type')
-    //     expect(error.rawMessage).toContain(
-    //       "Array type using 'Array<string>' is forbidden. Use 'string[]' instead."
-    //     )
-    //     expect(error.location).toEqual({
-    //       character: 43,
-    //       line: 5
-    //     })
+      const bundle = await compiler()
+      await bundle.generate({})
 
-    //     callback()
-    //   })
-    // })
+      // compiler.run((err, stats) => {
+      // const { warnings, errors } = stats.compilation
+      expect(warnings.length).toBe(2)
 
-    // ifNodeLt8It(
-    //   'throws an error about Node.js version required for `eslint` option',
-    //   () => {
-    //     expect(() => {
-    //       createCompiler({
-    //         context: './project_eslint',
-    //         entryPoint: './src/index.ts',
-    //         pluginOptions: { eslint: true }
-    //       })
-    //     }).toThrowError(
-    //       `To use 'eslint' option, please update to Node.js >= v8.10.0 ` +
-    //         `(current version is ${process.version})`
-    //     )
-    //   }
-    // )
+      const [warning, warning2] = warnings
+      const actualFile = unixify(warning.loc?.file ?? '')
+      const expectedFile = unixify('src/lib/func.ts')
+      expect(actualFile).toContain(expectedFile)
+      expect(warning.rawMessage).toContain('WARNING')
+      expect(warning.rawMessage).toContain('@typescript-eslint/array-type')
+      expect(warning.rawMessage).toContain(
+        "Array type using 'Array<string>' is forbidden. Use 'string[]' instead."
+      )
 
-    // it('should block emit on build mode', callback => {
-    //   const compiler = createCompiler()
+      // ref: https://codewithhugo.com/jest-array-object-match-contain/
+      expect(warning.loc).toEqual(
+        expect.objectContaining({
+          column: 44,
+          line: 3
+        })
+      )
 
-    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-    //     compiler
-    //   )
-    //   forkTsCheckerHooks.emit.tap('should block emit on build mode', () => {
-    //     expect(true).toBe(true)
-    //     callback()
-    //   })
+      const actualFile2 = unixify(warning2.loc?.file ?? '')
+      const expectedFile2 = unixify('src/lib/otherFunc.js')
+      expect(actualFile2).toContain(expectedFile2)
+      expect(warning2.rawMessage).toContain('WARNING')
+      expect(warning2.rawMessage).toContain('@typescript-eslint/no-unused-vars')
+      expect(warning2.rawMessage).toContain(
+        "'i' is assigned a value but never used."
+      )
+      expect(warning2.loc).toEqual(
+        expect.objectContaining({
+          column: 5,
+          line: 4
+        })
+      )
 
-    //   compiler.run(() => {
-    //     /**/
-    //   })
-    // })
+      const error = errors.find(err =>
+        err.rawMessage.includes('@typescript-eslint/array-type')
+      )
+      const actualErrorFile = unixify(error?.loc?.file ?? '')
+      const expectedErrorFile = unixify('src/index.ts')
+      expect(actualErrorFile).toContain(expectedErrorFile)
+      expect(error!.rawMessage).toContain('ERROR')
+      expect(error!.rawMessage).toContain('@typescript-eslint/array-type')
+      expect(error!.rawMessage).toContain(
+        "Array type using 'Array<string>' is forbidden. Use 'string[]' instead."
+      )
+      expect(error!.loc).toEqual(
+        expect.objectContaining({
+          column: 43,
+          line: 5
+        })
+      )
+
+      callback()
+      // })
+    })
+
+    ifNodeLt8It(
+      'throws an error about Node.js version required for `eslint` option',
+      () => {
+        expect(() => {
+          createCompiler({
+            context: './project_eslint',
+            entryPoint: '/test/fixtures/project_eslint/src/index.ts',
+            pluginOptions: { eslint: true }
+          })
+        }).toThrowError(
+          `To use 'eslint' option, please update to Node.js >= v8.10.0 ` +
+            `(current version is ${process.version})`
+        )
+      }
+    )
+
+    xit('should block emit on build mode', callback => {
+      const compiler = createCompiler()
+
+      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+        // @ts-ignore
+        compiler
+      )
+      forkTsCheckerHooks.emit.tap('should block emit on build mode', () => {
+        expect(true).toBe(true)
+        callback()
+      })
+
+      // @ts-ignore
+      compiler.run(() => {
+        /**/
+      })
+    })
 
     // it('should not block emit on watch mode', callback => {
     //   const compiler = createCompiler()

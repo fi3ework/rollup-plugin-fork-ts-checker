@@ -2,10 +2,10 @@
   "name": "rollup-plugin-fork-ts-checker",
   "version": "0.0.1-alpha.1",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "typings": "dist/index.d.ts",
   "files": [
-    "dist",
+    "lib",
     "src"
   ],
   "engines": {
@@ -13,9 +13,9 @@
   },
   "scripts": {
     "start": "tsc --watch --project ./src/tsconfig.json",
-    "build": "tsc",
+    "build": "rimraf lib && tsc --version && tsc --project \"./src\"",
     "test": "jext:integration",
-    "test:integration": "jest integration && rimraf tmp",
+    "test:integration": "jest ./test/integration/general.spec.ts && rimraf tmp",
     "lint": "tsdx lint",
     "prepare": "tsdx build"
   },
@@ -48,6 +48,7 @@
     "lodash": "^4.17.15",
     "mock-require": "^3.0.3",
     "rimraf": "^3.0.2",
+    "rollup-plugin-typescript2": "^0.27.0",
     "ts-jest": "^25.5.1",
     "tsdx": "^0.13.2",
     "tslib": "^1.11.2",

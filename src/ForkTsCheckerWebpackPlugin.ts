@@ -1,7 +1,7 @@
 import {
   InputOptions,
   PluginContext,
-  RollupBuild,
+  WarningHandlerWithDefault,
   MinimalPluginContext
 } from 'rollup'
 import * as path from 'path'
@@ -30,6 +30,7 @@ import {
 import { Issue, IssueSeverity } from 'fork-ts-checker-webpack-plugin/lib/issue'
 import { VueOptions } from 'fork-ts-checker-webpack-plugin/lib/types/vue-options'
 import { Options as EslintOptions } from 'fork-ts-checker-webpack-plugin/lib/types/eslint'
+import { RollupWarning, RollupError } from 'rollup'
 
 export namespace ForkTsCheckerWebpackPlugin {
   export interface Logger {
@@ -42,6 +43,8 @@ export namespace ForkTsCheckerWebpackPlugin {
   }
 
   export interface Options {
+    onError: (error: withRawMessage<RollupError>) => void
+    onWarn: (warning: withRawMessage<RollupWarning>) => void
     typescript: string
     tsconfig: string
     compilerOptions: object
@@ -65,6 +68,10 @@ export namespace ForkTsCheckerWebpackPlugin {
     resolveModuleNameModule: string
     resolveTypeReferenceDirectiveModule: string
   }
+}
+
+export type withRawMessage<T extends { [k: string]: any }> = T & {
+  rawMessage: string
 }
 
 /**
@@ -137,7 +144,6 @@ export class ForkTsCheckerWebpackPlugin {
   protected nodeArgs: string[] = []
 
   constructor(options?: Partial<ForkTsCheckerWebpackPlugin.Options>) {
-    console.log('constructor run')
     options = options || ({} as ForkTsCheckerWebpackPlugin.Options)
     this._options = { ...options }
     this.ignoreDiagnostics = options.ignoreDiagnostics || []
@@ -273,7 +279,6 @@ export class ForkTsCheckerWebpackPlugin {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public apply(compiler?: any) {
-    console.log('apply')
     // this.compiler = compiler
 
     this.tsconfigPath = this.computeContextPath(this.tsconfig)
@@ -319,7 +324,7 @@ export class ForkTsCheckerWebpackPlugin {
     return path.isAbsolute(filePath)
       ? filePath
       : // : path.resolve(process.cwd(), filePath)
-        path.resolve(this.compiler.options.context, filePath)
+        path.resolve(this.compiler.options.context || process.cwd(), filePath)
   }
 
   // NOTE: compiler.hooks.run & compiler.hooks.watchRun -> options()
@@ -328,15 +333,13 @@ export class ForkTsCheckerWebpackPlugin {
     options: InputOptions,
     pluginContext: MinimalPluginContext
   ) => {
-    console.log('🐶', 'options')
-    this.apply('')
     this.compiler = { options }
     this.isWatching = !!options.watch
+    this.apply()
   }
 
   // NOTE: compiler.hooks.compile -> buildStart()
   public buildStart = (options: InputOptions): void => {
-    console.log('🐶 buildStart hook')
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
       this.compiler
     )
@@ -387,8 +390,10 @@ export class ForkTsCheckerWebpackPlugin {
   }
 
   // NOTE: FTC
-  public generateBundle = (pluginContext: PluginContext) => {
-    console.log('🐶 generateBundle')
+  public generateBundle = (
+    pluginContext: PluginContext
+    // onWarn?: ForkTsCheckerWebpackPlugin.Options.
+  ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Promise((resolve, reject) => {
       const emit = (compilation: any, callback: () => void) => {
@@ -399,7 +404,10 @@ export class ForkTsCheckerWebpackPlugin {
         }
 
         // this.emitCallback = this.createEmitCallback(compilation, callback);
-        this.emitCallback = this.createEmitCallback(pluginContext, resolve)
+        this.emitCallback = this.createEmitCallback(pluginContext, resolve, {
+          onWarn: this._options.onWarn,
+          onError: this._options.onError
+        })
 
         if (this.checkDone) {
           this.emitCallback()
@@ -422,7 +430,6 @@ export class ForkTsCheckerWebpackPlugin {
 
   // NOTE: compiler.hooks.watchClose & compiler.hooks.done -> writeBundle()
   public writeBundle = () => {
-    console.log('🐶 writeBundle')
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
       this.compiler
     )
@@ -467,7 +474,7 @@ export class ForkTsCheckerWebpackPlugin {
       TYPESCRIPT_PATH: this.typescriptPath,
       TSCONFIG: this.tsconfigPath,
       COMPILER_OPTIONS: JSON.stringify(this.compilerOptions),
-      // CONTEXT: this.compiler.options.context,
+      CONTEXT: this.compiler.options.context,
       ESLINT: String(this.eslint),
       ESLINT_OPTIONS: JSON.stringify(this.eslintOptions),
       MEMORY_LIMIT: String(this.memoryLimit),
@@ -640,7 +647,11 @@ export class ForkTsCheckerWebpackPlugin {
 
   private createEmitCallback(
     pluginContext: PluginContext,
-    callback: () => void
+    callback: () => void,
+    onWarns?: {
+      onWarn?: (warning: any) => void
+      onError?: (warning: any) => void
+    }
   ) {
     return function emitCallback(this: ForkTsCheckerWebpackPlugin) {
       if (!this.elapsed) {
@@ -654,23 +665,26 @@ export class ForkTsCheckerWebpackPlugin {
       forkTsCheckerHooks.emit.call(this.diagnostics, this.lints, elapsed)
       this.diagnostics.concat(this.lints).forEach(issue => {
         // const warning = diagnosticToWarning(ts, host, diagnostic);
-        // webpack message format
-        const formatted = {
+        // rollup message format
+        const formatted: withRawMessage<RollupWarning | RollupError> = {
+          plugin: 'fork-ts-checker-webpack-plugin',
           rawMessage: this.rawFormatter(issue),
           message: this.formatter(issue),
-          location: {
-            line: issue.line,
-            character: issue.character
-          },
-          file: issue.file
+          loc: {
+            file: issue.file,
+            line: issue.line ?? -1, // TODO:
+            column: issue.character ?? -1 // TODO:
+          }
         }
 
         if (issue.severity === IssueSeverity.WARNING) {
           if (!this.ignoreLintWarnings) {
             pluginContext.warn(formatted)
+            onWarns?.onWarn?.(formatted)
           }
         } else {
-          pluginContext.error(formatted)
+          pluginContext.warn(formatted)
+          onWarns?.onError?.(formatted)
         }
       })
 
@@ -696,9 +710,7 @@ export class ForkTsCheckerWebpackPlugin {
   }
 
   private createDoneCallback() {
-    console.log('createDonCallback')
     return function doneCallback(this: ForkTsCheckerWebpackPlugin) {
-      console.log('done callback run')
       if (!this.elapsed) {
         throw new Error('Execution order error')
       }
