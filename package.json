@@ -14,17 +14,27 @@
   "scripts": {
     "start": "tsc --watch --project ./src/tsconfig.json",
     "build": "rimraf lib && tsc --version && tsc --project \"./src\"",
-    "test": "jext:integration",
-    "test:integration": "jest ./test/integration/general.spec.ts && rimraf tmp",
-    "lint": "tsdx lint",
-    "prepare": "tsdx build"
+    "test": "jest ./test/integration/general.spec.ts && rimraf tmp"
   },
   "peerDependencies": {
     "rollup": "1.x || 2.x"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "tsdx lint"
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "linters": {
+      "*.js": [
+        "eslint --fix",
+        "prettier --write",
+        "git add"
+      ],
+      "*.ts": [
+        "prettier --write",
+        "git add"
+      ]
     }
   },
   "author": "fi3ework",
