@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-fork-ts-checker",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha",
   "license": "MIT",
   "main": "lib/index.js",
   "typings": "dist/index.d.ts",
@@ -25,17 +25,15 @@
     }
   },
   "lint-staged": {
-    "linters": {
-      "*.js": [
-        "eslint --fix",
-        "prettier --write",
-        "git add"
-      ],
-      "*.ts": [
-        "prettier --write",
-        "git add"
-      ]
-    }
+    "*.js": [
+      "eslint --fix",
+      "prettier --write",
+      "git add"
+    ],
+    "*.ts": [
+      "prettier --write",
+      "git add"
+    ]
   },
   "author": "fi3ework",
   "bugs": {
@@ -47,22 +45,31 @@
   },
   "module": "dist/rollup-plugin-fork-ts-checker.esm.js",
   "devDependencies": {
+    "@types/jest": "^25.2.2",
     "@types/lodash": "^4.14.150",
     "@types/micromatch": "^4.0.1",
     "@types/node": "^13.13.5",
     "@types/rimraf": "^3.0.0",
     "@types/semver": "^7.1.0",
     "@types/tapable": "^1.0.5",
+    "@typescript-eslint/eslint-plugin": "^2.12.0",
+    "@typescript-eslint/parser": "^2.12.0",
     "copy-dir": "^1.2.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-prettier": "^3.1.2",
     "husky": "^4.2.5",
+    "jest": "^25",
+    "lint-staged": "^10.2.2",
     "lodash": "^4.17.15",
     "mock-require": "^3.0.3",
     "rimraf": "^3.0.2",
+    "rollup": "^2.10.2",
     "rollup-plugin-typescript2": "^0.27.0",
     "ts-jest": "^25.5.1",
-    "tsdx": "^0.13.2",
     "tslib": "^1.11.2",
-    "typescript": "^3.8.3",
+    "typescript": "^3.9.2",
     "unixify": "^1.0.0",
     "vue-loader": "^15.9.2"
   },
