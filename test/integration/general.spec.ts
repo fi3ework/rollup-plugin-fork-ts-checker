@@ -9,7 +9,7 @@ import unixify from 'unixify'
 import * as semver from 'semver'
 import { RollupError, RollupWarning } from 'rollup'
 
-describe.each([[true], [false]])(
+describe.each([[true]])(
   '[INTEGRATION] common tests - useTypescriptIncrementalApi: %s',
   useTypescriptIncrementalApi => {
     let compilerPlugin: ForkTsCheckerWebpackPlugin
@@ -141,7 +141,7 @@ describe.each([[true], [false]])(
 
       const { compiler } = createCompiler({
         context: './project_eslint',
-        entryPoint: './test/fixtures/project_eslint/src/index.ts',
+        entryPoint: './src/index.ts',
         pluginOptions: {
           eslint: true,
           onWarn: warn => warnings.push(warn),
@@ -251,33 +251,36 @@ describe.each([[true], [false]])(
       await bundle.generate({})
     })
 
-    xit('should not block emit on watch mode', async callback => {
+    it('should not block emit on watch mode', async callback => {
       let options: any
+      // Use rollup.watch API will not inject variable to env. Manually set it.
+      process.env.ROLLUP_WATCH = 'true'
 
       const { watcher } = createCompiler({
         pluginOptions: {
           onOptions: o => {
             options = o
+
+            const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+              options
+            )
+
+            forkTsCheckerHooks.done.tap(
+              'should not block emit on watch mode',
+              () => {
+                // watching.close(() => {
+                _watcher.close()
+                expect(true).toBe(true)
+                process.env.ROLLUP_WATCH = undefined
+                callback()
+                // })
+              }
+            )
           }
         }
       })
 
       const _watcher = watcher()
-      // const watching = compiler.watch({}, () => {
-      //   /**/
-      // })
-
-      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        options
-      )
-
-      forkTsCheckerHooks.done.tap('should not block emit on watch mode', () => {
-        // watching.close(() => {
-        _watcher.close()
-        expect(true).toBe(true)
-        callback()
-        // })
-      })
     })
 
     // it('should block emit if async flag is false', callback => {

@@ -280,7 +280,8 @@ export class ForkTsCheckerWebpackPlugin {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public apply(compiler?: any) {
-    // this.compiler = compiler
+    // add to map
+    ForkTsCheckerWebpackPlugin.getCompilerHooks(this.compiler)
 
     this.tsconfigPath = this.computeContextPath(this.tsconfig)
 
@@ -309,16 +310,11 @@ export class ForkTsCheckerWebpackPlugin {
       )
     }
 
-    // NOTE: options
-    // this.pluginStart();
-    // NOTE: buildStart
+    // this.pluginStart(); // options
     this.pluginStop()
-    // NOTE: buildEnd
-    // this.pluginCompile();
-    // NOTE: generateBundle
-    // this.pluginEmit();
-    // NOTE: writeBundle
-    // this.pluginDone();
+    // this.pluginCompile(); // buildStart
+    // this.pluginDone(); // buildEnd
+    // this.pluginEmit(); // generateBundle
   }
 
   private computeContextPath(filePath: string) {
@@ -328,16 +324,14 @@ export class ForkTsCheckerWebpackPlugin {
         path.resolve(this.compiler.options.context || process.cwd(), filePath)
   }
 
-  // NOTE: compiler.hooks.run & compiler.hooks.watchRun -> options()
   // TODO: consider multiple entry?
-  public options = (inputOptions: InputOptions, pluginContext: any) => {
+  public options = (inputOptions: InputOptions) => {
     this.compiler = { options: inputOptions }
-    this.isWatching = !!inputOptions.watch
-    this._options.onOptions?.(this.compiler)
+    this.isWatching = process.env.ROLLUP_WATCH === 'true'
     this.apply()
+    this._options.onOptions?.(this.compiler)
   }
 
-  // NOTE: compiler.hooks.compile -> buildStart()
   public buildStart = (options: InputOptions): void => {
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
       this.compiler
@@ -388,7 +382,6 @@ export class ForkTsCheckerWebpackPlugin {
     })
   }
 
-  // NOTE: FTC
   public generateBundle = (
     pluginContext: PluginContext
     // onWarn?: ForkTsCheckerWebpackPlugin.Options.
@@ -427,26 +420,10 @@ export class ForkTsCheckerWebpackPlugin {
     })
   }
 
-  // NOTE: compiler.hooks.watchClose & compiler.hooks.done -> writeBundle()
-  public writeBundle = () => {
+  public buildEnd = () => {
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
       this.compiler
     )
-
-    // TODO: detect watchClose
-    const watchClose = () => {
-      this.killService()
-    }
-
-    const done = () => {
-      if (!this.isWatching) {
-        this.killService()
-      }
-    }
-
-    done()
-
-    // === pluginDone ===
     // this.compiler.hooks.done.tap(checkerPluginName, () => {
     if (!this.isWatching || !this.async) {
       return
@@ -467,13 +444,32 @@ export class ForkTsCheckerWebpackPlugin {
     // });
   }
 
+  public writeBundle = () => {
+    const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+      this.compiler
+    )
+
+    // TODO: detect watchClose
+    const watchClose = () => {
+      this.killService()
+    }
+
+    const done = () => {
+      if (!this.isWatching) {
+        this.killService()
+      }
+    }
+
+    done()
+  }
+
   private spawnService() {
     const env: { [key: string]: string | undefined } = {
       ...process.env,
       TYPESCRIPT_PATH: this.typescriptPath,
       TSCONFIG: this.tsconfigPath,
       COMPILER_OPTIONS: JSON.stringify(this.compilerOptions),
-      CONTEXT: this.compiler.options.context,
+      CONTEXT: this.compiler?.options?.context,
       ESLINT: String(this.eslint),
       ESLINT_OPTIONS: JSON.stringify(this.eslintOptions),
       MEMORY_LIMIT: String(this.memoryLimit),

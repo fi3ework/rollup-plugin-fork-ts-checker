@@ -18,6 +18,9 @@ export default (
     buildStart(options) {
       return forkPlugin.buildStart(options)
     },
+    buildEnd() {
+      return forkPlugin.buildEnd()
+    },
     // @ts-ignore
     generateBundle() {
       const pluginContext = this

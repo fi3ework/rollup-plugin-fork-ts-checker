@@ -5,8 +5,9 @@
  * here vs. other files.
  *
  * */
-import fs from 'fs';
-import * as helpers from './helpers';
+import fs from 'fs'
+import * as helpers from './helpers'
+import { RollupError, RollupWarning } from 'rollup'
 
 describe('[INTEGRATION] specific tests for useTypescriptIncrementalApi: true', () => {
   function createCompiler(options: Partial<helpers.CreateCompilerOptions>) {
@@ -16,8 +17,8 @@ describe('[INTEGRATION] specific tests for useTypescriptIncrementalApi: true', (
         ...options.pluginOptions,
         useTypescriptIncrementalApi: true
       }
-    });
-    return compiler;
+    })
+    return compiler
   }
 
   function createVueCompiler(options: Partial<helpers.CreateCompilerOptions>) {
@@ -28,62 +29,74 @@ describe('[INTEGRATION] specific tests for useTypescriptIncrementalApi: true', (
         useTypescriptIncrementalApi: true,
         vue: true
       }
-    });
+    })
   }
 
   it('should get syntactic diagnostics from Vue program', callback => {
-    createVueCompiler({ pluginOptions: { checkSyntacticErrors: true } }).then(
-      ({ compiler }) =>
-        compiler.run((_error, stats) => {
-          const syntacticErrorFoundInStats = stats.compilation.errors.some(
-            error =>
-              error.rawMessage.includes(
-                helpers.expectedErrorCodes.expectedSyntacticErrorCode
-              )
-          );
-          expect(syntacticErrorFoundInStats).toBe(true);
-          callback();
-        })
-    );
-  });
+    const errors: RollupWarning | RollupError[] = []
+    createVueCompiler({
+      context: './vue',
+      entryPoint: './src/index.ts',
+      pluginOptions: {
+        onWarn: err => errors.push(err),
+        onError: err => errors.push(err),
+        checkSyntacticErrors: true
+      }
+    }).then(async ({ compiler, initSpawn }) => {
+      // const errors: RollupWarning | RollupError[] = []
+      // compiler.run((_error, stats) => {
+      const bundle = await compiler()
+      initSpawn()
+      bundle.generate({})
+      const syntacticErrorFoundInStats = errors.some(error =>
+        // @ts-ignore
+        error.rawMessage.includes(
+          helpers.expectedErrorCodes.expectedSyntacticErrorCode
+        )
+      )
+      expect(syntacticErrorFoundInStats).toBe(true)
+      callback()
+      // })
+    })
+  })
 
-  it('should not find syntactic errors in Vue program when checkSyntacticErrors is false', callback => {
-    createVueCompiler({ pluginOptions: { checkSyntacticErrors: false } }).then(
-      ({ compiler }) =>
-        compiler.run((_error, stats) => {
-          const syntacticErrorNotFoundInStats = stats.compilation.errors.every(
-            error =>
-              !error.rawMessage.includes(
-                helpers.expectedErrorCodes.expectedSyntacticErrorCode
-              )
-          );
-          expect(syntacticErrorNotFoundInStats).toBe(true);
-          callback();
-        })
-    );
-  });
+  // it('should not find syntactic errors in Vue program when checkSyntacticErrors is false', callback => {
+  //   createVueCompiler({ pluginOptions: { checkSyntacticErrors: false } }).then(
+  //     ({ compiler }) =>
+  //       compiler.run((_error, stats) => {
+  //         const syntacticErrorNotFoundInStats = stats.compilation.errors.every(
+  //           error =>
+  //             !error.rawMessage.includes(
+  //               helpers.expectedErrorCodes.expectedSyntacticErrorCode
+  //             )
+  //         );
+  //         expect(syntacticErrorNotFoundInStats).toBe(true);
+  //         callback();
+  //       })
+  //   );
+  // });
 
-  const isCaseInsensitiveFilesystem = fs.existsSync(
-    __dirname + '/../fixtures/caseSensitiveProject/src/Lib.ts'
-  );
+  // const isCaseInsensitiveFilesystem = fs.existsSync(
+  //   __dirname + '/../fixtures/caseSensitiveProject/src/Lib.ts'
+  // );
 
-  (isCaseInsensitiveFilesystem ? it : it.skip)(
-    'should find global errors even when checkSyntacticErrors is false (can only be tested on case-insensitive file systems)',
-    callback => {
-      const compiler = createCompiler({
-        context: './caseSensitiveProject',
-        pluginOptions: { checkSyntacticErrors: false }
-      });
+  // (isCaseInsensitiveFilesystem ? it : it.skip)(
+  //   'should find global errors even when checkSyntacticErrors is false (can only be tested on case-insensitive file systems)',
+  //   callback => {
+  //     const compiler = createCompiler({
+  //       context: './caseSensitiveProject',
+  //       pluginOptions: { checkSyntacticErrors: false }
+  //     });
 
-      compiler.run((_error, stats) => {
-        const globalErrorFoundInStats = stats.compilation.errors.some(error =>
-          error.rawMessage.includes(
-            helpers.expectedErrorCodes.expectedGlobalErrorCode
-          )
-        );
-        expect(globalErrorFoundInStats).toBe(true);
-        callback();
-      });
-    }
-  );
-});
+  //     compiler.run((_error, stats) => {
+  //       const globalErrorFoundInStats = stats.compilation.errors.some(error =>
+  //         error.rawMessage.includes(
+  //           helpers.expectedErrorCodes.expectedGlobalErrorCode
+  //         )
+  //       );
+  //       expect(globalErrorFoundInStats).toBe(true);
+  //       callback();
+  //     });
+  //   }
+  // );
+})

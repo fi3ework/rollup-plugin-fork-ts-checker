@@ -117,14 +117,15 @@ function normalizeDiagnosticsPaths(
 
 export function createCompiler({
   pluginOptions = {},
-  happyPackMode = false,
-  entryPoint = './test/fixtures/project/src/index.ts',
+  // happyPackMode = false,
+  entryPoint = './src/index.ts',
   context = './project',
   prepareRollupConfig = config => config,
   nodeRequires = [],
   normalizeDiagnosticsPaths: normalizePaths = true
 }: Partial<CreateCompilerOptions> = {}): CreateCompilerResults {
   const { contextDir, outDir, tmpDir } = prepareDirectory({ context })
+  entryPoint = path.resolve(contextDir, entryPoint)
 
   pluginOptions = { ...defaultOptions, ...pluginOptions }
 
@@ -136,16 +137,16 @@ export function createCompiler({
   lastInstantiatedPlugin = plugin
 
   const realPlugin = Plugin(pluginOptions, plugin)
-  const tsLoaderOptions = happyPackMode
-    ? { happyPackMode: true, silent: true }
-    : { transpileOnly: true, silent: true }
+  // const tsLoaderOptions = happyPackMode
+  //   ? { happyPackMode: true, silent: true }
+  //   : { transpileOnly: true, silent: true }
 
   const compilerConfig = prepareRollupConfig({
     // mode: 'development',
     context: contextDir,
     input: entryPoint,
     output: { dir: outDir },
-    external: ['fork-ts-checker-webpack-plugin'],
+    // external: ['fork-ts-checker-webpack-plugin'],
     // resolve: {
     //   extensions: ['.ts', '.js', '.tsx', '.json']
     // },
@@ -170,7 +171,18 @@ export function createCompiler({
 
   // const compiler = await rollup(compilerConfig)
   const compiler = () => rollup(compilerConfig)
-  const watcher = () => watch(compilerConfig)
+  const watcher = () =>
+    watch({
+      ...compilerConfig
+
+      // watch: {
+      //   chokidar: {
+      //     usePolling: true
+      //   }
+      // include: ['./src/**'],
+      // exclude: ['node_modules/**']
+      // }
+    })
 
   // if (normalizePaths) {
   //   const originalRun = compiler.run
@@ -196,6 +208,7 @@ export function createCompiler({
   return {
     compiler,
     watcher,
+    // @ts-ignore
     plugin,
     compilerConfig,
     contextDir,

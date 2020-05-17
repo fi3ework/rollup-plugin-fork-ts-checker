@@ -66,12 +66,16 @@
     "mock-require": "^3.0.3",
     "rimraf": "^3.0.2",
     "rollup": "^2.10.2",
+    "rollup-plugin-postcss": "^3.1.1",
     "rollup-plugin-typescript2": "^0.27.0",
+    "rollup-plugin-vue": "^5.1.7",
     "ts-jest": "^25.5.1",
     "tslib": "^1.11.2",
     "typescript": "^3.9.2",
     "unixify": "^1.0.0",
-    "vue-loader": "^15.9.2"
+    "vue": "^2.6.11",
+    "vue-class-component": "^7.2.3",
+    "vue-template-compiler": "^2.6.11"
   },
   "dependencies": {
     "chalk": "^4.0.0",
