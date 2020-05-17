@@ -19,12 +19,10 @@ describe.each([[true], [false]])(
     function createCompiler(
       options: Partial<helpers.CreateCompilerOptions> = {}
     ) {
-      const _options = {
+      const compiler = helpers.createCompiler({
         ...options,
         pluginOptions: { ...options.pluginOptions, ...overrideOptions }
-      }
-
-      const compiler = helpers.createCompiler(options)
+      })
       compilerPlugin = compiler.plugin
       return {
         compiler: compiler.compiler,
