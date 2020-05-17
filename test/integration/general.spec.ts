@@ -19,12 +19,17 @@ describe.each([[true], [false]])(
     function createCompiler(
       options: Partial<helpers.CreateCompilerOptions> = {}
     ) {
-      const compiler = helpers.createCompiler({
+      const _options = {
         ...options,
         pluginOptions: { ...options.pluginOptions, ...overrideOptions }
-      })
+      }
+
+      const compiler = helpers.createCompiler(options)
       compilerPlugin = compiler.plugin
-      return compiler.compiler
+      return {
+        compiler: compiler.compiler,
+        watcher: compiler.watcher
+      }
     }
 
     const ifNotIncrementalIt = useTypescriptIncrementalApi ? it.skip : it
@@ -61,7 +66,7 @@ describe.each([[true], [false]])(
     it('should find semantic errors', async callback => {
       const errors: RollupWarning | RollupError[] = []
 
-      const compiler = createCompiler({
+      const { compiler } = createCompiler({
         pluginOptions: {
           onError: err => errors.push(err),
           tsconfig: 'tsconfig-semantic-error-only.json'
@@ -78,7 +83,7 @@ describe.each([[true], [false]])(
     it('should support custom resolution', async callback => {
       const warnings: RollupWarning | RollupError[] = []
 
-      const compiler = createCompiler({
+      const { compiler } = createCompiler({
         pluginOptions: {
           onWarn: err => warnings.push(err),
           tsconfig: 'tsconfig-weird-resolutions.json',
@@ -107,7 +112,7 @@ describe.each([[true], [false]])(
       async callback => {
         const warnings: RollupWarning | RollupError[] = []
 
-        const compiler = createCompiler({
+        const { compiler } = createCompiler({
           pluginOptions: {
             onWarn: err => warnings.push(err),
             tsconfig: 'tsconfig-weird-resolutions-with-paths.json',
@@ -136,7 +141,7 @@ describe.each([[true], [false]])(
       const warnings: withRawMessage<RollupWarning>[] = []
       const errors: withRawMessage<RollupError>[] = []
 
-      const compiler = createCompiler({
+      const { compiler } = createCompiler({
         context: './project_eslint',
         entryPoint: './test/fixtures/project_eslint/src/index.ts',
         pluginOptions: {
@@ -224,40 +229,58 @@ describe.each([[true], [false]])(
       }
     )
 
-    xit('should block emit on build mode', callback => {
-      const compiler = createCompiler()
+    it('should block emit on build mode', async callback => {
+      let options: any
 
+      const { compiler } = createCompiler({
+        pluginOptions: {
+          onOptions: o => {
+            options = o
+          }
+        }
+      })
+
+      const bundle = await compiler()
       const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        // @ts-ignore
-        compiler
+        options
       )
+
       forkTsCheckerHooks.emit.tap('should block emit on build mode', () => {
         expect(true).toBe(true)
         callback()
       })
 
-      // @ts-ignore
-      compiler.run(() => {
-        /**/
-      })
+      await bundle.generate({})
     })
 
-    // it('should not block emit on watch mode', callback => {
-    //   const compiler = createCompiler()
-    //   const watching = compiler.watch({}, () => {
-    //     /**/
-    //   })
+    xit('should not block emit on watch mode', async callback => {
+      let options: any
 
-    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-    //     compiler
-    //   )
-    //   forkTsCheckerHooks.done.tap('should not block emit on watch mode', () => {
-    //     watching.close(() => {
-    //       expect(true).toBe(true)
-    //       callback()
-    //     })
-    //   })
-    // })
+      const { watcher } = createCompiler({
+        pluginOptions: {
+          onOptions: o => {
+            options = o
+          }
+        }
+      })
+
+      const _watcher = watcher()
+      // const watching = compiler.watch({}, () => {
+      //   /**/
+      // })
+
+      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+        options
+      )
+
+      forkTsCheckerHooks.done.tap('should not block emit on watch mode', () => {
+        // watching.close(() => {
+        _watcher.close()
+        expect(true).toBe(true)
+        callback()
+        // })
+      })
+    })
 
     // it('should block emit if async flag is false', callback => {
     //   const compiler = createCompiler({ pluginOptions: { async: false } })

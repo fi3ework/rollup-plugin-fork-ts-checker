@@ -11,8 +11,8 @@ export default (
   return {
     name: 'fork-ts-checker-webpack-plugin',
     options(inputOptions) {
-      const pluginContext = this
-      forkPlugin.options(inputOptions, pluginContext)
+      // const pluginContext = this
+      forkPlugin.options(inputOptions, options)
       return null
     },
     buildStart(options) {

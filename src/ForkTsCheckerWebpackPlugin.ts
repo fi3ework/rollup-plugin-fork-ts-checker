@@ -45,6 +45,7 @@ export namespace ForkTsCheckerWebpackPlugin {
   export interface Options {
     onError: (error: withRawMessage<RollupError>) => void
     onWarn: (warning: withRawMessage<RollupWarning>) => void
+    onOptions: (options: { options: InputOptions }) => void
     typescript: string
     tsconfig: string
     compilerOptions: object
@@ -329,12 +330,10 @@ export class ForkTsCheckerWebpackPlugin {
 
   // NOTE: compiler.hooks.run & compiler.hooks.watchRun -> options()
   // TODO: consider multiple entry?
-  public options = (
-    options: InputOptions,
-    pluginContext: MinimalPluginContext
-  ) => {
-    this.compiler = { options }
-    this.isWatching = !!options.watch
+  public options = (inputOptions: InputOptions, pluginContext: any) => {
+    this.compiler = { options: inputOptions }
+    this.isWatching = !!inputOptions.watch
+    this._options.onOptions?.(this.compiler)
     this.apply()
   }
 

@@ -1,5 +1,11 @@
 // import webpack from 'webpack'
-import { rollup, RollupOptions, RollupBuild } from 'rollup'
+import {
+  rollup,
+  watch,
+  RollupOptions,
+  RollupBuild,
+  RollupWatcher
+} from 'rollup'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as copyDir from 'copy-dir'
@@ -57,6 +63,7 @@ const defaultOptions: Partial<ForkTsCheckerWebpackPlugin.Options> = {
 
 interface CreateCompilerResults {
   compiler: () => Promise<RollupBuild>
+  watcher: () => RollupWatcher
   readonly compilerConfig: RollupOptions
   plugin: ForkTsCheckerWebpackPlugin
   contextDir: string
@@ -163,6 +170,7 @@ export function createCompiler({
 
   // const compiler = await rollup(compilerConfig)
   const compiler = () => rollup(compilerConfig)
+  const watcher = () => watch(compilerConfig)
 
   // if (normalizePaths) {
   //   const originalRun = compiler.run
@@ -187,6 +195,7 @@ export function createCompiler({
 
   return {
     compiler,
+    watcher,
     plugin,
     compilerConfig,
     contextDir,
