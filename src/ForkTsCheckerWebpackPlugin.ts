@@ -43,6 +43,7 @@ export namespace ForkTsCheckerWebpackPlugin {
   }
 
   export interface Options {
+    hookStab: Object
     onError: (error: withRawMessage<RollupError>) => void
     onWarn: (warning: withRawMessage<RollupWarning>) => void
     onOptions: (options: { options: InputOptions }) => void
@@ -87,11 +88,11 @@ export class ForkTsCheckerWebpackPlugin {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static getCompilerHooks(context: PluginContext) {
-    // TODO: no type check here?
     return getForkTsCheckerWebpackPluginHooks(context)
   }
 
-  public _options: Partial<ForkTsCheckerWebpackPlugin.Options>
+  private hookStab?: Object
+  private _options: Partial<ForkTsCheckerWebpackPlugin.Options>
   private tsconfig: string
   private compilerOptions: object
   private eslint = false
@@ -147,6 +148,7 @@ export class ForkTsCheckerWebpackPlugin {
   constructor(options?: Partial<ForkTsCheckerWebpackPlugin.Options>) {
     options = options || ({} as ForkTsCheckerWebpackPlugin.Options)
     this._options = { ...options }
+    this.hookStab = options.hookStab
     this.ignoreDiagnostics = options.ignoreDiagnostics || []
     this.ignoreLints = options.ignoreLints || []
     this.ignoreLintWarnings = options.ignoreLintWarnings === true
@@ -238,6 +240,10 @@ export class ForkTsCheckerWebpackPlugin {
     }
   }
 
+  private getCompiler = () => {
+    return this.hookStab || this.compiler
+  }
+
   private validateEslint(options: Partial<ForkTsCheckerWebpackPlugin.Options>) {
     let eslintVersion: string
     const eslintOptions =
@@ -281,7 +287,7 @@ export class ForkTsCheckerWebpackPlugin {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public apply(compiler?: any) {
     // add to map
-    ForkTsCheckerWebpackPlugin.getCompilerHooks(this.compiler)
+    ForkTsCheckerWebpackPlugin.getCompilerHooks(this.getCompiler())
 
     this.tsconfigPath = this.computeContextPath(this.tsconfig)
 
@@ -328,13 +334,13 @@ export class ForkTsCheckerWebpackPlugin {
   public options = (inputOptions: InputOptions) => {
     this.compiler = { options: inputOptions }
     this.isWatching = process.env.ROLLUP_WATCH === 'true'
-    this.apply()
     this._options.onOptions?.(this.compiler)
+    this.apply()
   }
 
   public buildStart = (options: InputOptions): void => {
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-      this.compiler
+      this.getCompiler()
     )
 
     this.compilationDone = false
@@ -422,7 +428,7 @@ export class ForkTsCheckerWebpackPlugin {
 
   public buildEnd = () => {
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-      this.compiler
+      this.getCompiler()
     )
     // this.compiler.hooks.done.tap(checkerPluginName, () => {
     if (!this.isWatching || !this.async) {
@@ -446,7 +452,7 @@ export class ForkTsCheckerWebpackPlugin {
 
   public writeBundle = () => {
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-      this.compiler
+      this.getCompiler()
     )
 
     // TODO: how to detect watchClose in rollup?
@@ -513,7 +519,7 @@ export class ForkTsCheckerWebpackPlugin {
     })
 
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-      this.compiler
+      this.getCompiler()
     )
     forkTsCheckerHooks.serviceStart.call(this.tsconfigPath, this.memoryLimit)
 
@@ -600,7 +606,7 @@ export class ForkTsCheckerWebpackPlugin {
     }
 
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-      this.compiler
+      this.getCompiler()
     )
     forkTsCheckerHooks.receive.call(this.diagnostics, this.lints)
 
@@ -616,7 +622,7 @@ export class ForkTsCheckerWebpackPlugin {
     // probably out of memory :/
     if (this.compiler) {
       const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        this.compiler
+        this.getCompiler()
       )
       forkTsCheckerHooks.serviceOutOfMemory.call()
     }
@@ -655,7 +661,7 @@ export class ForkTsCheckerWebpackPlugin {
       const elapsed = Math.round(this.elapsed[0] * 1e9 + this.elapsed[1])
 
       const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        this.compiler
+        this.getCompiler()
       )
       forkTsCheckerHooks.emit.call(this.diagnostics, this.lints, elapsed)
       this.diagnostics.concat(this.lints).forEach(issue => {
@@ -713,7 +719,7 @@ export class ForkTsCheckerWebpackPlugin {
 
       if (this.compiler) {
         const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-          this.compiler
+          this.getCompiler()
         )
         forkTsCheckerHooks.done.call(this.diagnostics, this.lints, elapsed)
       }

@@ -359,94 +359,120 @@ describe.each([[true]])(
       }).rejects.toBeTruthy()
     })
 
-    // it('should allow delaying service-start', callback => {
-    //   const compiler = createCompiler()
-    //   let delayed = false
+    it('should allow delaying service-start', async callback => {
+      const hookStab = {}
 
-    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-    //     compiler
-    //   )
-    //   forkTsCheckerHooks.serviceBeforeStart.tapAsync(
-    //     'should allow delaying service-start',
-    //     (cb: () => void) => {
-    //       setTimeout(() => {
-    //         delayed = true
+      const { compiler } = createCompiler({
+        pluginOptions: {
+          hookStab
+        }
+      })
 
-    //         cb()
-    //       }, 0)
-    //     }
-    //   )
+      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+        // @ts-ignore
+        hookStab
+      )
 
-    //   forkTsCheckerHooks.serviceBeforeStart.tap(
-    //     'should allow delaying service-start',
-    //     () => {
-    //       expect(delayed).toBe(true)
-    //       callback()
-    //     }
-    //   )
+      let delayed = false
 
-    //   compiler.run(() => {
-    //     /**  */
-    //   })
-    // })
+      forkTsCheckerHooks.serviceBeforeStart.tapAsync(
+        'should allow delaying service-start',
+        (cb: () => void) => {
+          setTimeout(() => {
+            delayed = true
 
-    // it('should not find syntactic errors when checkSyntacticErrors is false', callback => {
-    //   const compiler = createCompiler({
-    //     pluginOptions: { checkSyntacticErrors: false },
-    //     happyPackMode: true
-    //   })
+            cb()
+          }, 0)
+        }
+      )
 
-    //   compiler.run((_error, stats) => {
-    //     const syntacticErrorNotFoundInStats = stats.compilation.errors.every(
-    //       error =>
-    //         !error.rawMessage.includes(
-    //           helpers.expectedErrorCodes.expectedSyntacticErrorCode
-    //         )
-    //     )
-    //     expect(syntacticErrorNotFoundInStats).toBe(true)
-    //     callback()
-    //   })
-    // })
+      forkTsCheckerHooks.serviceBeforeStart.tap(
+        'should allow delaying service-start',
+        () => {
+          expect(delayed).toBe(true)
+          callback()
+        }
+      )
 
-    // it('should find syntactic errors when checkSyntacticErrors is true', callback => {
-    //   const compiler = createCompiler({
-    //     pluginOptions: { checkSyntacticErrors: true },
-    //     happyPackMode: true
-    //   })
+      compiler()
+    })
 
-    //   compiler.run((_error, stats) => {
-    //     const syntacticErrorFoundInStats = stats.compilation.errors.some(
-    //       error =>
-    //         error.rawMessage.includes(
-    //           helpers.expectedErrorCodes.expectedSyntacticErrorCode
-    //         )
-    //     )
-    //     expect(syntacticErrorFoundInStats).toBe(true)
-    //     callback()
-    //   })
-    // })
+    it('should not find syntactic errors when checkSyntacticErrors is false', async callback => {
+      const errors: any[] = []
+      const { compiler } = createCompiler({
+        pluginOptions: {
+          checkSyntacticErrors: false,
+          onWarn: err => errors.push(err)
+        }
+        // happyPackMode: true
+      })
 
-    // /**
-    //  * regression test for #267, #299
-    //  */
-    // it('should work even when the plugin has been deep-cloned', callback => {
-    //   const compiler = createCompiler({
-    //     pluginOptions: {
-    //       tsconfig: 'tsconfig-semantic-error-only.json'
-    //     },
-    //     prepareWebpackConfig({ plugins, ...config }) {
-    //       return { ...config, plugins: cloneDeep(plugins) }
-    //     }
-    //   })
+      const bundle = await compiler()
+      await bundle.generate({})
 
-    //   compiler.run((err, stats) => {
-    //     expect(stats.compilation.errors).toEqual([
-    //       expect.objectContaining({
-    //         message: expect.stringContaining('TS2322')
-    //       })
-    //     ])
-    //     callback()
-    //   })
-    // })
+      // compiler.run((_error, stats) => {
+      const syntacticErrorNotFoundInStats = errors.every(
+        error =>
+          !error.rawMessage.includes(
+            helpers.expectedErrorCodes.expectedSyntacticErrorCode
+          )
+      )
+      expect(syntacticErrorNotFoundInStats).toBe(true)
+      callback()
+      // })
+    })
+
+    it('should find syntactic errors when checkSyntacticErrors is true', async callback => {
+      const errors: any[] = []
+      const { compiler } = createCompiler({
+        pluginOptions: {
+          checkSyntacticErrors: true,
+          onError: err => errors.push(err)
+        }
+        // happyPackMode: true
+      })
+
+      const bundle = await compiler()
+      await bundle.generate({})
+
+      // compiler.run((_error, stats) => {
+      const syntacticErrorFoundInStats = errors.some(error =>
+        error.rawMessage.includes(
+          helpers.expectedErrorCodes.expectedSyntacticErrorCode
+        )
+      )
+      expect(syntacticErrorFoundInStats).toBe(true)
+      callback()
+      // })
+    })
+
+    /**
+     * regression test for #267, #299
+     */
+    it('should work even when the plugin has been deep-cloned', async callback => {
+      const errors: any[] = []
+
+      const { compiler } = createCompiler({
+        pluginOptions: {
+          tsconfig: 'tsconfig-semantic-error-only.json',
+          onError: err => errors.push(err)
+        },
+        prepareRollupConfig({ plugins, ...config }) {
+          return { ...config, plugins: cloneDeep(plugins) }
+        }
+      })
+
+      const bundle = await compiler()
+      await bundle.generate({})
+
+      // compiler.run((err, stats) => {
+      expect(errors).toEqual([
+        expect.objectContaining({
+          message: expect.stringContaining('TS2322')
+        })
+      ])
+      callback()
+      // })
+    })
   }
 )
