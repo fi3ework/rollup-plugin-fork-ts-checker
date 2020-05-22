@@ -283,55 +283,81 @@ describe.each([[true]])(
       const _watcher = watcher()
     })
 
-    // it('should block emit if async flag is false', callback => {
-    //   const compiler = createCompiler({ pluginOptions: { async: false } })
-    //   const watching = compiler.watch({}, () => {
-    //     /**/
-    //   })
+    it('should block emit if async flag is false', callback => {
+      let options: any
+      // Use rollup.watch API will not inject variable to env. Manually set it.
+      process.env.ROLLUP_WATCH = 'true'
 
-    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-    //     compiler
-    //   )
-    //   forkTsCheckerHooks.emit.tap(
-    //     'should block emit if async flag is false',
-    //     () => {
-    //       watching.close(() => {
-    //         expect(true).toBe(true)
-    //         callback()
-    //       })
-    //     }
-    //   )
-    // })
+      const { watcher } = createCompiler({
+        pluginOptions: {
+          async: false,
+          onOptions: o => {
+            options = o
+            const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+              options
+            )
 
-    // it('kills the service when the watch is done', done => {
-    //   const compiler = createCompiler()
-    //   const watching = compiler.watch({}, () => {
-    //     /**/
-    //   })
+            forkTsCheckerHooks.emit.tap(
+              'should not block emit on watch mode',
+              () => {
+                // watching.close(() => {
+                _watcher.close()
+                expect(true).toBe(true)
+                process.env.ROLLUP_WATCH = undefined
+                callback()
+                // })
+              }
+            )
+          }
+        }
+      })
 
-    //   const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-    //     compiler
-    //   )
-    //   forkTsCheckerHooks.done.tap(
-    //     'kills the service when the watch is done',
-    //     () => {
-    //       watching.close(() => {
-    //         expect(killServiceWasCalled()).toBe(true)
-    //         done()
-    //       })
-    //     }
-    //   )
-    // })
+      const _watcher = watcher()
+    })
 
-    // it('should throw error if config container wrong tsconfig.json path', () => {
-    //   expect(() => {
-    //     createCompiler({
-    //       pluginOptions: {
-    //         tsconfig: '/some/path/that/not/exists/tsconfig.json'
-    //       }
-    //     })
-    //   }).toThrowError()
-    // })
+    // TODO: how to detect watchClose in rollup?
+    xit('kills the service when the watch is done', done => {
+      let options: any
+      // Use rollup.watch API will not inject variable to env. Manually set it.
+      process.env.ROLLUP_WATCH = 'true'
+
+      const { watcher } = createCompiler({
+        pluginOptions: {
+          onOptions: o => {
+            options = o
+            const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+              options
+            )
+
+            forkTsCheckerHooks.done.tap(
+              'should not block emit on watch mode',
+              () => {
+                // watching.close(() => {
+                _watcher.close()
+                expect(killServiceWasCalled()).toBe(true)
+                process.env.ROLLUP_WATCH = undefined
+                done()
+                // })
+              }
+            )
+          }
+        }
+      })
+
+      const _watcher = watcher()
+    })
+
+    it('should throw error if config container wrong tsconfig.json path', () => {
+      expect(async () => {
+        const { compiler } = createCompiler({
+          pluginOptions: {
+            tsconfig: '/some/path/that/not/exists/tsconfig.json'
+          }
+        })
+
+        const bundle = await compiler()
+      }).rejects.toBeTruthy()
+    })
 
     // it('should allow delaying service-start', callback => {
     //   const compiler = createCompiler()

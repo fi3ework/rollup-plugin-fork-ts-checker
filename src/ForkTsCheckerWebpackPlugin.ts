@@ -449,7 +449,7 @@ export class ForkTsCheckerWebpackPlugin {
       this.compiler
     )
 
-    // TODO: detect watchClose
+    // TODO: how to detect watchClose in rollup?
     const watchClose = () => {
       this.killService()
     }
