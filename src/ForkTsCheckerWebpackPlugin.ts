@@ -46,7 +46,6 @@ export namespace ForkTsCheckerWebpackPlugin {
     hookStab: Object
     onError: (error: withRawMessage<RollupError>) => void
     onWarn: (warning: withRawMessage<RollupWarning>) => void
-    onOptions: (options: { options: InputOptions }) => void
     typescript: string
     tsconfig: string
     compilerOptions: object
@@ -334,7 +333,6 @@ export class ForkTsCheckerWebpackPlugin {
   public options = (inputOptions: InputOptions) => {
     this.compiler = { options: inputOptions }
     this.isWatching = process.env.ROLLUP_WATCH === 'true'
-    this._options.onOptions?.(this.compiler)
     this.apply()
   }
 

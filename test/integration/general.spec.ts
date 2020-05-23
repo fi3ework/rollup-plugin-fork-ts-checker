@@ -228,19 +228,18 @@ describe.each([[true]])(
     )
 
     it('should block emit on build mode', async callback => {
-      let options: any
+      const hookStab = {}
 
       const { compiler } = createCompiler({
         pluginOptions: {
-          onOptions: o => {
-            options = o
-          }
+          hookStab
         }
       })
 
       const bundle = await compiler()
       const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-        options
+        // @ts-ignore
+        hookStab
       )
 
       forkTsCheckerHooks.emit.tap('should block emit on build mode', () => {
@@ -252,64 +251,58 @@ describe.each([[true]])(
     })
 
     it('should not block emit on watch mode', async callback => {
-      let options: any
+      const hookStab = {}
+
       // Use rollup.watch API will not inject variable to env. Manually set it.
       process.env.ROLLUP_WATCH = 'true'
 
       const { watcher } = createCompiler({
         pluginOptions: {
-          onOptions: o => {
-            options = o
-
-            const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-              options
-            )
-
-            forkTsCheckerHooks.done.tap(
-              'should not block emit on watch mode',
-              () => {
-                // watching.close(() => {
-                _watcher.close()
-                expect(true).toBe(true)
-                process.env.ROLLUP_WATCH = undefined
-                callback()
-                // })
-              }
-            )
-          }
+          hookStab
         }
+      })
+
+      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+        // @ts-ignore
+        hookStab
+      )
+
+      forkTsCheckerHooks.done.tap('should not block emit on watch mode', () => {
+        // watching.close(() => {
+        _watcher.close()
+        expect(true).toBe(true)
+        process.env.ROLLUP_WATCH = undefined
+        callback()
+        // })
       })
 
       const _watcher = watcher()
     })
 
     it('should block emit if async flag is false', callback => {
-      let options: any
+      const hookStab = {}
       // Use rollup.watch API will not inject variable to env. Manually set it.
       process.env.ROLLUP_WATCH = 'true'
 
       const { watcher } = createCompiler({
         pluginOptions: {
           async: false,
-          onOptions: o => {
-            options = o
-            const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-              options
-            )
-
-            forkTsCheckerHooks.emit.tap(
-              'should not block emit on watch mode',
-              () => {
-                // watching.close(() => {
-                _watcher.close()
-                expect(true).toBe(true)
-                process.env.ROLLUP_WATCH = undefined
-                callback()
-                // })
-              }
-            )
-          }
+          hookStab
         }
+      })
+
+      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+        // @ts-ignore
+        hookStab
+      )
+
+      forkTsCheckerHooks.emit.tap('should not block emit on watch mode', () => {
+        // watching.close(() => {
+        _watcher.close()
+        expect(true).toBe(true)
+        process.env.ROLLUP_WATCH = undefined
+        callback()
+        // })
       })
 
       const _watcher = watcher()
@@ -317,31 +310,29 @@ describe.each([[true]])(
 
     // TODO: how to detect watchClose in rollup?
     xit('kills the service when the watch is done', done => {
-      let options: any
+      const hookStab = {}
+
       // Use rollup.watch API will not inject variable to env. Manually set it.
       process.env.ROLLUP_WATCH = 'true'
 
       const { watcher } = createCompiler({
         pluginOptions: {
-          onOptions: o => {
-            options = o
-            const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
-              options
-            )
-
-            forkTsCheckerHooks.done.tap(
-              'should not block emit on watch mode',
-              () => {
-                // watching.close(() => {
-                _watcher.close()
-                expect(killServiceWasCalled()).toBe(true)
-                process.env.ROLLUP_WATCH = undefined
-                done()
-                // })
-              }
-            )
-          }
+          hookStab
         }
+      })
+
+      const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
+        // @ts-ignore
+        hookStab
+      )
+
+      forkTsCheckerHooks.done.tap('should not block emit on watch mode', () => {
+        // watching.close(() => {
+        _watcher.close()
+        expect(killServiceWasCalled()).toBe(true)
+        process.env.ROLLUP_WATCH = undefined
+        done()
+        // })
       })
 
       const _watcher = watcher()
