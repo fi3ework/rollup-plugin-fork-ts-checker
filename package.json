@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-fork-ts-checker",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "main": "lib/index.js",
   "typings": "dist/index.d.ts",
