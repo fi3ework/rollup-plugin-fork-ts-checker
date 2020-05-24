@@ -1,5 +1,21 @@
 {
   "name": "rollup-plugin-fork-ts-checker",
+  "description": "Runs typescript type checker and linter on separate process.",
+  "keywords": [
+    "awesome-rollup-plugins",
+    "checker",
+    "fast",
+    "fork",
+    "increment",
+    "linter",
+    "plugin",
+    "speed",
+    "ts-loader",
+    "type",
+    "typescript",
+    "rollup",
+    "rollup-plugin"
+  ],
   "version": "0.0.3",
   "license": "MIT",
   "main": "lib/index.js",
