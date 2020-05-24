@@ -24,8 +24,9 @@ export default (
       const pluginContext = this
       await forkPlugin.generateBundle(pluginContext)
     },
-    writeBundle() {
-      return forkPlugin.writeBundle()
+    async writeBundle() {
+      forkPlugin.writeBundle()
+      return
     }
   }
 }

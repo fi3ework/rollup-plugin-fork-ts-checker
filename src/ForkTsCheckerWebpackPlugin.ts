@@ -332,7 +332,10 @@ export class ForkTsCheckerWebpackPlugin {
   // TODO: consider multiple entry?
   public options = (inputOptions: InputOptions) => {
     this.compiler = { options: inputOptions }
-    this.isWatching = process.env.ROLLUP_WATCH === 'true'
+    this.isWatching =
+      !!inputOptions.watch ||
+      process.env.NODE_ENV === 'development' ||
+      process.env.ROLLUP_WATCH === 'true'
     this.apply()
   }
 
@@ -448,7 +451,7 @@ export class ForkTsCheckerWebpackPlugin {
     // });
   }
 
-  public writeBundle = () => {
+  public writeBundle = async () => {
     const forkTsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(
       this.getCompiler()
     )
