@@ -1,4 +1,4 @@
-import { ForkTsCheckerWebpackPlugin } from '../../../lib/ForkTsCheckerWebpackPlugin'
+import { ForkTsCheckerWebpackPlugin } from '../../../lib/ForkTsCheckerPlugin'
 export { ForkTsCheckerWebpackPlugin }
 import Plugin from '../../../lib/index'
 export { Plugin }

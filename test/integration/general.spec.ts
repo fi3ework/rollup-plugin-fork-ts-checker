@@ -2,7 +2,7 @@ import path from 'path'
 import {
   ForkTsCheckerWebpackPlugin,
   withRawMessage
-} from '../../lib/ForkTsCheckerWebpackPlugin'
+} from '../../lib/ForkTsCheckerPlugin'
 import * as helpers from './helpers'
 import { cloneDeep } from 'lodash'
 import unixify from 'unixify'
@@ -23,6 +23,7 @@ describe.each([[true]])(
         ...options,
         pluginOptions: { ...options.pluginOptions, ...overrideOptions }
       })
+      // @ts-ignore
       compilerPlugin = compiler.plugin
       return {
         compiler: compiler.compiler,
