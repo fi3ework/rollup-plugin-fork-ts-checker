@@ -20,7 +20,7 @@ or with Yarn
 yarn add fork-ts-checker-webpack-plugin -D
 ```
 
-The original idea for this plugin was to work with [rollup-plugin-typescript2](https://github.com/ezolenko/rollup-plugin-typescript2). It also could work with and none type checking TypeScript compile tool.
+The original idea for this plugin was to work with [rollup-plugin-typescript2](https://github.com/ezolenko/rollup-plugin-typescript2). It also could work with any none type checking TypeScript compile tool.
 
 Here's a simple Rollup config example work with rpt2:
 
@@ -53,7 +53,7 @@ export default {
 Most options are completely same as [fork-ts-checker-webpack-plugin](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin#options). But some functionality can not be supported.
 
 - Webpack related configurations (e.g. ts-loader, happypack).
-- Vue (could be supported, still WIP).
+- vue (could be supported, still WIP).
 
 ## License
 

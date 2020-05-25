@@ -1,5 +1,5 @@
 import { Plugin } from 'rollup'
-import { ForkTsCheckerWebpackPlugin } from './ForkTsCheckerWebpackPlugin'
+import { ForkTsCheckerWebpackPlugin } from './ForkTsCheckerPlugin'
 
 export default (
   options: Partial<ForkTsCheckerWebpackPlugin.Options>,
