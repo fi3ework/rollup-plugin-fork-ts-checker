@@ -5,9 +5,7 @@ export default (
   options: Partial<ForkTsCheckerWebpackPlugin.Options>,
   pluginInstance?: ForkTsCheckerWebpackPlugin
 ): Plugin => {
-  const forkPlugin = pluginInstance
-    ? pluginInstance
-    : new ForkTsCheckerWebpackPlugin(options)
+  const forkPlugin = pluginInstance || new ForkTsCheckerWebpackPlugin(options)
   return {
     name: 'fork-ts-checker-webpack-plugin',
     options(inputOptions) {

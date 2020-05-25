@@ -129,14 +129,18 @@ export function createCompiler({
 
   pluginOptions = { ...defaultOptions, ...pluginOptions }
 
-  const plugin = new ForkTsCheckerWebpackPlugin(pluginOptions)
-  plugin['nodeArgs'] = nodeRequires.reduce<string[]>((acc, fileName) => {
-    acc.push('--require', `${path.resolve(__dirname, fileName)}`)
-    return acc
-  }, [])
-  lastInstantiatedPlugin = plugin
+  const internalPlugin = new ForkTsCheckerWebpackPlugin(pluginOptions)
+  internalPlugin['nodeArgs'] = nodeRequires.reduce<string[]>(
+    (acc, fileName) => {
+      acc.push('--require', `${path.resolve(__dirname, fileName)}`)
+      return acc
+    },
+    []
+  )
+  lastInstantiatedPlugin = internalPlugin
 
-  const realPlugin = Plugin(pluginOptions, plugin)
+  // @ts-ignore
+  const plugin = Plugin(pluginOptions, internalPlugin)
   // const tsLoaderOptions = happyPackMode
   //   ? { happyPackMode: true, silent: true }
   //   : { transpileOnly: true, silent: true }
@@ -161,7 +165,7 @@ export function createCompiler({
     // },
     plugins: [
       // @ts-ignore
-      realPlugin,
+      plugin,
       typescript({
         check: false,
         tsconfigOverride: { compilerOptions: { module: 'es2015' } }
@@ -209,7 +213,7 @@ export function createCompiler({
     compiler,
     watcher,
     // @ts-ignore
-    plugin,
+    plugin: internalPlugin,
     compilerConfig,
     contextDir,
     outDir,

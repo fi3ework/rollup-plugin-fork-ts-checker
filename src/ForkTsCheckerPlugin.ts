@@ -43,6 +43,7 @@ export namespace ForkTsCheckerWebpackPlugin {
     hookStab: Object
     onError: (error: withRawMessage<RollupError>) => void
     onWarn: (warning: withRawMessage<RollupWarning>) => void
+    /** original options ↓ */
     typescript: string
     tsconfig: string
     compilerOptions: object
